@@ -1,0 +1,98 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "piolib.h"
+#include "ws2812.pio.h"
+
+#define NUM_TRAINS 5       // Number of trains
+#define TRAIN_LENGTH 10    // Length of each train in LEDs
+#define PIXELS 144         // Total number of LEDs in the strip
+
+// Define a brightness variable (0 to 255)
+uint8_t brightness = 10;  // Half brightness (can be adjusted)
+
+void set_brightness(uint8_t value) {
+    brightness = value;
+}
+
+// Function to scale color values based on brightness
+uint8_t scale_brightness(uint8_t color, uint8_t brightness) {
+    return (color * brightness) / 255;
+}
+
+// Function to initialize the train positions
+void initialize_train_positions(int train_positions[], int num_trains, int pixels) {
+    for (int i = 0; i < num_trains; i++) {
+        train_positions[i] = (i * pixels) / num_trains;  // Space trains evenly
+    }
+}
+
+// Function to update the LED strip with multiple trains and a white background
+void update_led_strip(uint8_t databuf[], int train_positions[], int num_trains, int train_length, int pixels) {
+    // Set the background color to white for all LEDs, with adjustable brightness
+    for (int i = 0; i < pixels; i++) {
+        databuf[4 * i + 0] = scale_brightness(0xFF, brightness);  // White (W)
+        databuf[4 * i + 1] = scale_brightness(0xFF, brightness);  // Blue (B)
+        databuf[4 * i + 2] = scale_brightness(0xFF, brightness);  // Red (R)
+        databuf[4 * i + 3] = scale_brightness(0xFF, brightness);  // Green (G)
+    }
+
+    // Draw each train on top of the background, with adjustable brightness
+    for (int t = 0; t < num_trains; t++) {
+        for (int l = 0; l < train_length; l++) {
+            int led_pos = (train_positions[t] + l) % pixels;  // Wrap around if needed
+
+            // Set the color for the train (0x087200 in RGBW format), with adjustable brightness
+            databuf[4 * led_pos + 0] = scale_brightness(0x00, brightness);  // White (W)
+            databuf[4 * led_pos + 1] = scale_brightness(0x00, brightness);  // Blue (B)
+            databuf[4 * led_pos + 2] = scale_brightness(0x08, brightness);  // Red (R)
+            databuf[4 * led_pos + 3] = scale_brightness(0x65, brightness);  // Green (G)
+        }
+    }
+}
+
+int main(int argc, const char **argv) {
+    PIO pio;
+    int sm;
+    uint offset;
+    uint gpio = 2;
+    uint8_t databuf[PIXELS * 4];
+    int train_positions[NUM_TRAINS];
+
+    if (argc == 2)
+        gpio = (uint)strtoul(argv[1], NULL, 0);
+
+    // Initialize PIO and SM
+    pio = pio0;
+    sm = pio_claim_unused_sm(pio, true);
+    pio_sm_config_xfer(pio, sm, PIO_DIR_TO_SM, 256, 1);
+
+    offset = pio_add_program(pio, &ws2812_program);
+    printf("Loaded program at %d, using sm %d, gpio %d\n", offset, sm, gpio);
+
+    pio_sm_clear_fifos(pio, sm);
+    pio_sm_set_clkdiv(pio, sm, 1.0);
+    ws2812_program_init(pio, sm, offset, gpio, 800000.0, false);
+
+    // Initialize train positions
+    initialize_train_positions(train_positions, NUM_TRAINS, PIXELS);
+
+    while (1) {
+        // Update the LED strip with the current train positions and white background
+        update_led_strip(databuf, train_positions, NUM_TRAINS, TRAIN_LENGTH, PIXELS);
+
+        // Send the updated LED data to the strip
+        pio_sm_xfer_data(pio, sm, PIO_DIR_TO_SM, sizeof(databuf), databuf);
+
+        // Move the trains forward
+        for (int t = 0; t < NUM_TRAINS; t++) {
+            train_positions[t] = (train_positions[t] + 1) % PIXELS;  // Wrap around if needed
+        }
+
+        // Delay to control the animation speed
+        sleep_ms(50);  // Adjust this value to change the speed
+    }
+
+    return 0;
+}

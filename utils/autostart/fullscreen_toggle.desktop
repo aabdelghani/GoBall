@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Fullscreen Toggle
+Exec=/home/pi/squareline_fullscreen_daemon.sh 
+X-GNOME-Autostart-enabled=true
