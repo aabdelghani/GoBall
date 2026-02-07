@@ -22,15 +22,15 @@
 /*********************
  *      STATIC VARIABLES
  *********************/
-unsigned int           sensor_pins[NUM_SENSORS] = {17, 26, 27, 24};  // GPIO pin numbers for sensors
-Player                 players[MAX_PLAYERS];                         // Array of players
-int                    current_player_index = 0;                     // Index of the current player
+unsigned int sensor_pins[NUM_SENSORS] = {17, 26, 27, 24};  // GPIO pin numbers for sensors
+Player       players[MAX_PLAYERS];                         // Array of players
+int          current_player_index = 0;                     // Index of the current player
 // Timer-based debouncing
 timer_t                debounce_timers[NUM_SENSORS];    // POSIX timers for each sensor
 volatile sig_atomic_t  sensor_debouncing[NUM_SENSORS];  // Flags: 1 = in debounce period, 0 = ready
-struct gpiod_chip*     chip = NULL;                         // GPIO chip handle
-struct gpiod_line_bulk lines;                               // GPIO lines for sensors
-int                    num_players       = 0;               // Number of players
+struct gpiod_chip*     chip = NULL;                     // GPIO chip handle
+struct gpiod_line_bulk lines;                           // GPIO lines for sensors
+int                    num_players       = 0;           // Number of players
 GameMode               current_game_mode = GAME_MODE_STROKE_PLAY;  // Default value
 uint8_t      all_players_completed = 1;  // Flag to check if all players have completed the game
 unsigned int playersmp[2]          = {0};
@@ -144,8 +144,7 @@ static void start_debounce_timer(int sensor_index)
 bool is_it_first_turn = 0;  // Flag to check if it's the first turn
 
 void two_player_highlight_pattern(GameMode game_mode, HoleMode hole_mode)
-{
-    // Update counter (special reset logic)
+{  // Update counter (special reset logic)
     highliting_counter = (highliting_counter >= 8) ? 1 : highliting_counter + 1;
     DEBUG_DEBUG(MODULE_UI, "Two player highlight - counter: %d, game_mode: %d, hole_mode: %d",
                 highliting_counter, game_mode, hole_mode);
@@ -196,7 +195,8 @@ void two_player_highlight_pattern(GameMode game_mode, HoleMode hole_mode)
                     break;
 
                 case EIGHTEEN_HOLES:
-                    // Pattern for Match Play 18 holes: P1/T1=01,45,89,1213,1617 | P2/T2=23,67,1011,1415
+                    // Pattern for Match Play 18 holes: P1/T1=01,45,89,1213,1617 |
+                    // P2/T2=23,67,1011,1415
                     if (highliting_counter % 4 == 0 || highliting_counter % 4 == 1)
                     {
                         DEBUG_DEBUG(MODULE_UI, "Highlighting Player/Team 1 (18H Match Play)");
@@ -246,7 +246,12 @@ void two_player_highlight_pattern(GameMode game_mode, HoleMode hole_mode)
             switch (hole_mode)
             {
                 case NINE_HOLES:
-                    if (highliting_counter % 4 == 0 || highliting_counter % 4 == 1)
+                    DEBUG_DEBUG(MODULE_UI, "Quota 2P 9H highlighting");
+                    DEBUG_TRACE(MODULE_GAME, "Highlight Counter Value: %d", highliting_counter);
+
+                    if (highliting_counter == 0 || highliting_counter == 1 ||
+                        highliting_counter == 4 || highliting_counter == 5 ||
+                        highliting_counter == 8)
                     {
                         DEBUG_DEBUG(MODULE_UI, "Quota 2P 9H - Highlighting Player 1");
                         lv_obj_set_style_bg_color(ui_Q2P9HGSP1SPar3Panel, lv_color_hex(COLOR_1),
@@ -263,7 +268,7 @@ void two_player_highlight_pattern(GameMode game_mode, HoleMode hole_mode)
                                                   LV_PART_MAIN | LV_STATE_DEFAULT);
                     }
                     else
-                    {
+                    {  // Cases 2,3,6,7
                         DEBUG_DEBUG(MODULE_UI, "Quota 2P 9H - Highlighting Player 2");
                         lv_obj_set_style_bg_color(ui_Q2P9HGSP1SPar3Panel, lv_color_hex(COLOR_2),
                                                   LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -280,7 +285,12 @@ void two_player_highlight_pattern(GameMode game_mode, HoleMode hole_mode)
                     }
                     break;
                 case EIGHTEEN_HOLES:
-                    if (highliting_counter % 4 == 0 || highliting_counter % 4 == 1)
+                    DEBUG_DEBUG(MODULE_UI, "Quota 2P 18H highlighting");
+                    DEBUG_TRACE(MODULE_GAME, "Highlight Counter Value: %d", highliting_counter);
+
+                    if (highliting_counter == 0 || highliting_counter == 1 ||
+                        highliting_counter == 4 || highliting_counter == 5 ||
+                        highliting_counter == 8)
                     {
                         DEBUG_DEBUG(MODULE_UI, "Quota 2P 18H - Highlighting Player 1");
                         lv_obj_set_style_bg_color(ui_Q2P18HGSP1SPar3Panel, lv_color_hex(COLOR_1),
@@ -297,7 +307,7 @@ void two_player_highlight_pattern(GameMode game_mode, HoleMode hole_mode)
                                                   LV_PART_MAIN | LV_STATE_DEFAULT);
                     }
                     else
-                    {
+                    {  // Cases 2,3,6,7
                         DEBUG_DEBUG(MODULE_UI, "Quota 2P 18H - Highlighting Player 2");
                         lv_obj_set_style_bg_color(ui_Q2P18HGSP1SPar3Panel, lv_color_hex(COLOR_2),
                                                   LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -818,7 +828,8 @@ void set_hole_mode(HoleMode mode)
     DEBUG_INFO(MODULE_LOGIC, "Setting hole mode to: %s",
                (mode == HOLES_9) ? "9 Holes" : "18 Holes");
     current_hole_mode = mode;
-    DEBUG_INFO(MODULE_LOGIC, "Current settings: game_mode=%d, hole_mode=%d, match_play_mode=%d, num_players=%d",
+    DEBUG_INFO(MODULE_LOGIC,
+               "Current settings: game_mode=%d, hole_mode=%d, match_play_mode=%d, num_players=%d",
                current_game_mode, current_hole_mode, current_match_play_mode, num_players);
     DEBUG_INFO(MODULE_LOGIC, "=========================================");
 }
@@ -830,7 +841,8 @@ void set_match_play_mode(MatchPlayMode mode)
     DEBUG_INFO(MODULE_LOGIC, "Setting match play mode to: %s",
                (mode == MATCH_PLAY_MODE_1V1) ? "1v1" : "2v2");
     current_match_play_mode = mode;
-    DEBUG_INFO(MODULE_LOGIC, "Current settings: game_mode=%d, hole_mode=%d, match_play_mode=%d, num_players=%d",
+    DEBUG_INFO(MODULE_LOGIC,
+               "Current settings: game_mode=%d, hole_mode=%d, match_play_mode=%d, num_players=%d",
                current_game_mode, current_hole_mode, current_match_play_mode, num_players);
     DEBUG_INFO(MODULE_LOGIC, "===============================================");
 }
@@ -942,7 +954,7 @@ void check_all_players_completed(GameMode gameMode)
                 else if (num_players == 3)
                 {
                     // Determine winner among 3 players (higher score wins)
-                    int winner = 0;
+                    int winner    = 0;
                     int max_score = players[0].score;
                     int tie_count = 1;
 
@@ -951,7 +963,7 @@ void check_all_players_completed(GameMode gameMode)
                         if (players[i].score > max_score)
                         {
                             max_score = players[i].score;
-                            winner = i;
+                            winner    = i;
                             tie_count = 1;
                         }
                         else if (players[i].score == max_score)
@@ -962,18 +974,25 @@ void check_all_players_completed(GameMode gameMode)
 
                     if (tie_count == 1)
                     {
-                        DEBUG_INFO(MODULE_GAME, "Player %d wins with score %d", winner + 1, max_score);
+                        DEBUG_INFO(MODULE_GAME, "Player %d wins with score %d", winner + 1,
+                                   max_score);
                         switch (winner)
                         {
-                            case 0: PLAY_PLAYER1WINS_WAV; break;
-                            case 1: PLAY_PLAYER2WINS_WAV; break;
-                            case 2: PLAY_PLAYER3WINS_WAV; break;
+                            case 0:
+                                PLAY_PLAYER1WINS_WAV;
+                                break;
+                            case 1:
+                                PLAY_PLAYER2WINS_WAV;
+                                break;
+                            case 2:
+                                PLAY_PLAYER3WINS_WAV;
+                                break;
                         }
                     }
                     else
                     {
-                        DEBUG_INFO(MODULE_GAME, "Game tied with %d players at %d points",
-                                   tie_count, max_score);
+                        DEBUG_INFO(MODULE_GAME, "Game tied with %d players at %d points", tie_count,
+                                   max_score);
                     }
 
                     if (current_hole_mode == NINE_HOLES)
@@ -992,7 +1011,7 @@ void check_all_players_completed(GameMode gameMode)
                 else if (num_players == 4)
                 {
                     // Determine winner among 4 players (higher score wins)
-                    int winner = 0;
+                    int winner    = 0;
                     int max_score = players[0].score;
                     int tie_count = 1;
 
@@ -1001,7 +1020,7 @@ void check_all_players_completed(GameMode gameMode)
                         if (players[i].score > max_score)
                         {
                             max_score = players[i].score;
-                            winner = i;
+                            winner    = i;
                             tie_count = 1;
                         }
                         else if (players[i].score == max_score)
@@ -1012,19 +1031,28 @@ void check_all_players_completed(GameMode gameMode)
 
                     if (tie_count == 1)
                     {
-                        DEBUG_INFO(MODULE_GAME, "Player %d wins with score %d", winner + 1, max_score);
+                        DEBUG_INFO(MODULE_GAME, "Player %d wins with score %d", winner + 1,
+                                   max_score);
                         switch (winner)
                         {
-                            case 0: PLAY_PLAYER1WINS_WAV; break;
-                            case 1: PLAY_PLAYER2WINS_WAV; break;
-                            case 2: PLAY_PLAYER3WINS_WAV; break;
-                            case 3: PLAY_PLAYER4WINS_WAV; break;
+                            case 0:
+                                PLAY_PLAYER1WINS_WAV;
+                                break;
+                            case 1:
+                                PLAY_PLAYER2WINS_WAV;
+                                break;
+                            case 2:
+                                PLAY_PLAYER3WINS_WAV;
+                                break;
+                            case 3:
+                                PLAY_PLAYER4WINS_WAV;
+                                break;
                         }
                     }
                     else
                     {
-                        DEBUG_INFO(MODULE_GAME, "Game tied with %d players at %d points",
-                                   tie_count, max_score);
+                        DEBUG_INFO(MODULE_GAME, "Game tied with %d players at %d points", tie_count,
+                                   max_score);
                     }
 
                     if (current_hole_mode == NINE_HOLES)
@@ -1049,8 +1077,8 @@ void check_all_players_completed(GameMode gameMode)
             break;
 
         case GAME_MODE_QUOTA:
-            DEBUG_INFO(MODULE_GAME,
-                       "Quota Points - checking completion for %d players", num_players);
+            DEBUG_INFO(MODULE_GAME, "Quota Points - checking completion for %d players",
+                       num_players);
 
             for (uint8_t i = 0; i < num_players; i++)
             {
@@ -1062,8 +1090,7 @@ void check_all_players_completed(GameMode gameMode)
                 else
                 {
                     player_is_finished[i] = 0;
-                    DEBUG_DEBUG(MODULE_GAME,
-                                "Player %d quota remaining (3pt:%d, 4pt:%d, 5pt:%d)",
+                    DEBUG_DEBUG(MODULE_GAME, "Player %d quota remaining (3pt:%d, 4pt:%d, 5pt:%d)",
                                 i + 1, players[i].par3_count, players[i].par4_count,
                                 players[i].par5_count);
                 }
@@ -1087,22 +1114,42 @@ void check_all_players_completed(GameMode gameMode)
                     {
                         update_flag = 1;
                         set_sensors_enabled(0);
-                        DEBUG_INFO(MODULE_GAME, "Player 1 completed quota first! Score:%d", players[0].score);
+                        DEBUG_INFO(MODULE_GAME, "Player 1 completed quota first! Score:%d",
+                                   players[0].score);
                         PLAY_PLAYER1WINS_WAV;
+                        if (current_hole_mode == NINE_HOLES)
+                            lv_obj_clear_flag(ui_Q2P9HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
+                        else
+                            lv_obj_clear_flag(ui_Q2P18HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
                     }
                     else if (player_is_finished[1] && !player_is_finished[0])
                     {
                         update_flag = 1;
                         set_sensors_enabled(0);
-                        DEBUG_INFO(MODULE_GAME, "Player 2 completed quota first! Score:%d", players[1].score);
+                        DEBUG_INFO(MODULE_GAME, "Player 2 completed quota first! Score:%d",
+                                   players[1].score);
                         PLAY_PLAYER2WINS_WAV;
+                        if (current_hole_mode == NINE_HOLES)
+                            lv_obj_clear_flag(ui_Q2P9HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+                        else
+                            lv_obj_clear_flag(ui_Q2P18HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
                     }
                     else if (player_is_finished[0] && player_is_finished[1])
                     {
                         update_flag = 1;
                         set_sensors_enabled(0);
                         DEBUG_INFO(MODULE_GAME, "Both players completed quota simultaneously!");
-                        // Both finished at the same time - tie
+                        // Both finished at the same time - show both crowns
+                        if (current_hole_mode == NINE_HOLES)
+                        {
+                            lv_obj_clear_flag(ui_Q2P9HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
+                            lv_obj_clear_flag(ui_Q2P9HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+                        }
+                        else
+                        {
+                            lv_obj_clear_flag(ui_Q2P18HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
+                            lv_obj_clear_flag(ui_Q2P18HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+                        }
                     }
                     break;
             }
@@ -1164,7 +1211,8 @@ void check_all_players_completed(GameMode gameMode)
                 {
                     DEBUG_INFO(MODULE_GAME, "Game ends early: Player 1 wins %d&%d", lead,
                                holes_remaining);
-                    DEBUG_INFO(MODULE_GAME, "Early victory - Player 1 wins the match - sensors disabled");
+                    DEBUG_INFO(MODULE_GAME,
+                               "Early victory - Player 1 wins the match - sensors disabled");
                     PLAY_PLAYER1WINS_WAV;
                     // Update F column with X&Y format for early victory
                     if (current_hole_mode == NINE_HOLES)
@@ -1174,7 +1222,8 @@ void check_all_players_completed(GameMode gameMode)
                     }
                     else if (current_hole_mode == EIGHTEEN_HOLES)
                     {
-                        lv_label_set_text_fmt(ui_MP1V118HScP1STextF, "%d&%d", lead, holes_remaining);
+                        lv_label_set_text_fmt(ui_MP1V118HScP1STextF, "%d&%d", lead,
+                                              holes_remaining);
                         lv_label_set_text(ui_MP1V118HScP2STextF, "-");
                     }
                 }
@@ -1182,7 +1231,8 @@ void check_all_players_completed(GameMode gameMode)
                 {
                     DEBUG_INFO(MODULE_GAME, "Game ends early: Team 1 wins %d&%d", lead,
                                holes_remaining);
-                    DEBUG_INFO(MODULE_GAME, "Early victory - Team 1 wins the match - sensors disabled");
+                    DEBUG_INFO(MODULE_GAME,
+                               "Early victory - Team 1 wins the match - sensors disabled");
                     PLAY_TEAM1WINS_WAV;
                     // Update F column with X&Y format for early victory
                     if (current_hole_mode == NINE_HOLES)
@@ -1192,7 +1242,8 @@ void check_all_players_completed(GameMode gameMode)
                     }
                     else if (current_hole_mode == EIGHTEEN_HOLES)
                     {
-                        lv_label_set_text_fmt(ui_MP2V218HScT1STextF, "%d&%d", lead, holes_remaining);
+                        lv_label_set_text_fmt(ui_MP2V218HScT1STextF, "%d&%d", lead,
+                                              holes_remaining);
                         lv_label_set_text(ui_MP2V218HScT2STextF, "-");
                     }
                 }
@@ -1208,36 +1259,42 @@ void check_all_players_completed(GameMode gameMode)
                 {
                     DEBUG_INFO(MODULE_GAME, "Game ends early: Player 2 wins %d&%d", -lead,
                                holes_remaining);
-                    DEBUG_INFO(MODULE_GAME, "Early victory - Player 2 wins the match - sensors disabled");
+                    DEBUG_INFO(MODULE_GAME,
+                               "Early victory - Player 2 wins the match - sensors disabled");
                     PLAY_PLAYER2WINS_WAV;
                     // Update F column with X&Y format for early victory
                     if (current_hole_mode == NINE_HOLES)
                     {
                         lv_label_set_text(ui_MP1V19HScP1STextF, "-");
-                        lv_label_set_text_fmt(ui_MP1V19HScP2STextF, "%d&%d", -lead, holes_remaining);
+                        lv_label_set_text_fmt(ui_MP1V19HScP2STextF, "%d&%d", -lead,
+                                              holes_remaining);
                     }
                     else if (current_hole_mode == EIGHTEEN_HOLES)
                     {
                         lv_label_set_text(ui_MP1V118HScP1STextF, "-");
-                        lv_label_set_text_fmt(ui_MP1V118HScP2STextF, "%d&%d", -lead, holes_remaining);
+                        lv_label_set_text_fmt(ui_MP1V118HScP2STextF, "%d&%d", -lead,
+                                              holes_remaining);
                     }
                 }
                 else if (current_match_play_mode == MATCH_PLAY_MODE_2V2)
                 {
                     DEBUG_INFO(MODULE_GAME, "Game ends early: Team 2 wins %d&%d", -lead,
                                holes_remaining);
-                    DEBUG_INFO(MODULE_GAME, "Early victory - Team 2 wins the match - sensors disabled");
+                    DEBUG_INFO(MODULE_GAME,
+                               "Early victory - Team 2 wins the match - sensors disabled");
                     PLAY_TEAM2WINS_WAV;
                     // Update F column with X&Y format for early victory
                     if (current_hole_mode == NINE_HOLES)
                     {
                         lv_label_set_text(ui_MP2V29HScT1STextF, "-");
-                        lv_label_set_text_fmt(ui_MP2V29HScT2STextF, "%d&%d", -lead, holes_remaining);
+                        lv_label_set_text_fmt(ui_MP2V29HScT2STextF, "%d&%d", -lead,
+                                              holes_remaining);
                     }
                     else if (current_hole_mode == EIGHTEEN_HOLES)
                     {
                         lv_label_set_text(ui_MP2V218HScT1STextF, "-");
-                        lv_label_set_text_fmt(ui_MP2V218HScT2STextF, "%d&%d", -lead, holes_remaining);
+                        lv_label_set_text_fmt(ui_MP2V218HScT2STextF, "%d&%d", -lead,
+                                              holes_remaining);
                     }
                 }
             }
@@ -1354,24 +1411,26 @@ void print_final_scores_and_winner(void)
     {
         // For Match Play, winner is determined by holes won (upAndDown)
         DEBUG_INFO(MODULE_GAME, "=== Match Play Final Result ===");
-        DEBUG_INFO(MODULE_GAME, "Player 1: %d holes won, upAndDown: %d",
-                   players[0].holes_won, players[0].upAndDown);
-        DEBUG_INFO(MODULE_GAME, "Player 2: %d holes won, upAndDown: %d",
-                   players[1].holes_won, players[1].upAndDown);
+        DEBUG_INFO(MODULE_GAME, "Player 1: %d holes won, upAndDown: %d", players[0].holes_won,
+                   players[0].upAndDown);
+        DEBUG_INFO(MODULE_GAME, "Player 2: %d holes won, upAndDown: %d", players[1].holes_won,
+                   players[1].upAndDown);
 
         if (players[0].upAndDown > 0)
         {
             winner_index = 0;
-            tie = 0;
+            tie          = 0;
             DISABLE_SENSORS
-            DEBUG_INFO(MODULE_GAME, "Player 1 wins - %dUP - sensors disabled", players[0].upAndDown);
+            DEBUG_INFO(MODULE_GAME, "Player 1 wins - %dUP - sensors disabled",
+                       players[0].upAndDown);
         }
         else if (players[0].upAndDown < 0)
         {
             winner_index = 1;
-            tie = 0;
+            tie          = 0;
             DISABLE_SENSORS
-            DEBUG_INFO(MODULE_GAME, "Player 2 wins - %dUP - sensors disabled", -players[0].upAndDown);
+            DEBUG_INFO(MODULE_GAME, "Player 2 wins - %dUP - sensors disabled",
+                       -players[0].upAndDown);
         }
         else
         {
@@ -1718,13 +1777,13 @@ void print_final_scores_and_winner(void)
                     if (current_hole_mode == NINE_HOLES)
                     {
                         _ui_screen_change(&ui_MP1V19HScorecard, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
-                                        &ui_MP1V19HScorecard_screen_init);
+                                          &ui_MP1V19HScorecard_screen_init);
                         DEBUG_INFO(MODULE_UI, "Navigating to 1v1 9H scorecard");
                     }
                     else if (current_hole_mode == EIGHTEEN_HOLES)
                     {
                         _ui_screen_change(&ui_MP1V118HScorecard, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
-                                        &ui_MP1V118HScorecard_screen_init);
+                                          &ui_MP1V118HScorecard_screen_init);
                         DEBUG_INFO(MODULE_UI, "Navigating to 1v1 18H scorecard");
                     }
                 }
@@ -1733,13 +1792,13 @@ void print_final_scores_and_winner(void)
                     if (current_hole_mode == NINE_HOLES)
                     {
                         _ui_screen_change(&ui_MP2V29HScorecard, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
-                                        &ui_MP2V29HScorecard_screen_init);
+                                          &ui_MP2V29HScorecard_screen_init);
                         DEBUG_INFO(MODULE_UI, "Navigating to 2v2 9H scorecard");
                     }
                     else if (current_hole_mode == EIGHTEEN_HOLES)
                     {
                         _ui_screen_change(&ui_MP2V218HScorecard, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
-                                        &ui_MP2V218HScorecard_screen_init);
+                                          &ui_MP2V218HScorecard_screen_init);
                         DEBUG_INFO(MODULE_UI, "Navigating to 2v2 18H scorecard");
                     }
                 }
@@ -1752,8 +1811,8 @@ void print_final_scores_and_winner(void)
                     case 1:
                         DEBUG_INFO(MODULE_GAME,
                                    "1P Quota complete - Score:%d (3pt:%d, 4pt:%d, 5pt:%d)",
-                                   players[0].score, players[0].par3_count,
-                                   players[0].par4_count, players[0].par5_count);
+                                   players[0].score, players[0].par3_count, players[0].par4_count,
+                                   players[0].par5_count);
                         // Navigate back to home screen for 1 player
                         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                                           &ui_HScreen_screen_init);
@@ -1950,7 +2009,8 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                             "Calling stroke_play_process_pin for Player %d, pin %d",
                                             current_player_index + 1, pin_offset);
 
-                                stroke_play_process_pin(player, current_player_index, pin_offset, &leds);
+                                stroke_play_process_pin(player, current_player_index, pin_offset,
+                                                        &leds);
                                 break;
 
                             case GAME_MODE_MATCH_PLAY:
@@ -2022,13 +2082,27 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                                 player->score, player->detection_count,
                                                 num_players);
 
-                        // Quota 1P: every detection is a complete turn
-                        if (current_game_mode == GAME_MODE_QUOTA && num_players == 1 &&
-                            player->detection_count == 1 && !update_flag)
+                        // Quota: check completion after every detection
+                        // If player reaches 0,0,0, game ends immediately regardless of remaining
+                        // balls
+                        if (current_game_mode == GAME_MODE_QUOTA && !update_flag)
                         {
-                            player->detection_count = 0;
-                            DEBUG_INFO(MODULE_GAME, "Quota 1P - hole completed immediately");
-                            check_all_players_completed(current_game_mode);
+                            if (quota_player_completed(player))
+                            {
+                                player->detection_count = 0;
+                                DEBUG_INFO(
+                                    MODULE_GAME,
+                                    "Quota Player %d completed quota - ending game immediately",
+                                    current_player_index + 1);
+                                check_all_players_completed(current_game_mode);
+                            }
+                            else if (num_players == 1 && player->detection_count == 1)
+                            {
+                                // 1P: each single detection completes a turn (no 2-ball
+                                // requirement)
+                                player->detection_count = 0;
+                                DEBUG_INFO(MODULE_GAME, "Quota 1P - hole completed immediately");
+                            }
                         }
 
                         // Handle turn completion based on game mode
@@ -2085,7 +2159,8 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                         else if (current_match_play_mode == MATCH_PLAY_MODE_2V2)
                                         {
                                             DEBUG_INFO(MODULE_LOGIC, "Playing Team Two sound");
-                                            play_sound_once(load_sound_effect(SOUND_TEAMTWO_WAV), SOUND_DELAY_TURN_SWITCH_MS);
+                                            play_sound_once(load_sound_effect(SOUND_TEAMTWO_WAV),
+                                                            SOUND_DELAY_TURN_SWITCH_MS);
                                         }
                                     }
 
@@ -2128,34 +2203,45 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                                     players[0].upAndDown, players[1].upAndDown);
 
                                         // Calculate if early victory condition is met
-                                        int lead = (players[0].upAndDown > 0) ? players[0].upAndDown :
-                                                   (players[1].upAndDown > 0) ? players[1].upAndDown : 0;
-                                        int holes_remaining = current_hole_mode - players[0].current_hole - 1;
+                                        int lead = (players[0].upAndDown > 0) ? players[0].upAndDown
+                                                   : (players[1].upAndDown > 0)
+                                                       ? players[1].upAndDown
+                                                       : 0;
+                                        int holes_remaining =
+                                            current_hole_mode - players[0].current_hole - 1;
                                         int early_victory = (lead > 0 && lead > holes_remaining);
 
-                                        DEBUG_DEBUG(MODULE_LOGIC, "Early victory check: lead=%d, holes_remaining=%d, early_victory=%d",
+                                        DEBUG_DEBUG(MODULE_LOGIC,
+                                                    "Early victory check: lead=%d, "
+                                                    "holes_remaining=%d, early_victory=%d",
                                                     lead, holes_remaining, early_victory);
 
-                                        // Announce Player/Team One for next hole (unless game is over)
-                                        // Check for early victory condition before announcing
-                                        if (players[0].current_hole < current_hole_mode && !early_victory)
+                                        // Announce Player/Team One for next hole (unless game is
+                                        // over) Check for early victory condition before announcing
+                                        if (players[0].current_hole < current_hole_mode &&
+                                            !early_victory)
                                         {
                                             if (current_match_play_mode == MATCH_PLAY_MODE_1V1)
                                             {
-                                                DEBUG_INFO(MODULE_LOGIC, "Playing Player One sound");
-                                                play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV),
-                                                                SOUND_DELAY_TURN_SWITCH_MS);
+                                                DEBUG_INFO(MODULE_LOGIC,
+                                                           "Playing Player One sound");
+                                                play_sound_once(
+                                                    load_sound_effect(SOUND_PLAYERONE_WAV),
+                                                    SOUND_DELAY_TURN_SWITCH_MS);
                                             }
                                             else if (current_match_play_mode == MATCH_PLAY_MODE_2V2)
                                             {
                                                 DEBUG_INFO(MODULE_LOGIC, "Playing Team One sound");
-                                                play_sound_once(load_sound_effect(SOUND_TEAMONE_WAV),
-                                                                SOUND_DELAY_TURN_SWITCH_MS);
+                                                play_sound_once(
+                                                    load_sound_effect(SOUND_TEAMONE_WAV),
+                                                    SOUND_DELAY_TURN_SWITCH_MS);
                                             }
                                         }
                                         else
                                         {
-                                            DEBUG_INFO(MODULE_LOGIC, "Skipping player announcement - game ended (early_victory=%d) or last hole",
+                                            DEBUG_INFO(MODULE_LOGIC,
+                                                       "Skipping player announcement - game ended "
+                                                       "(early_victory=%d) or last hole",
                                                        early_victory);
                                         }
 
@@ -2178,60 +2264,74 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                                 // 1v1 9-hole UI updates
                                                 if (players[0].upAndDown < 0)
                                                 {
-                                                    lv_label_set_text_fmt(ui_MP1V19HGSP1SPText, "%dDN",
-                                                                          players[0].upAndDown * -1);
-                                                    lv_label_set_text_fmt(ui_MP1V19HGSP2SPText, "%dUP",
+                                                    lv_label_set_text_fmt(
+                                                        ui_MP1V19HGSP1SPText, "%dDN",
+                                                        players[0].upAndDown * -1);
+                                                    lv_label_set_text_fmt(ui_MP1V19HGSP2SPText,
+                                                                          "%dUP",
                                                                           players[1].upAndDown);
                                                 }
                                                 else if (players[1].upAndDown < 0)
                                                 {
-                                                    lv_label_set_text_fmt(ui_MP1V19HGSP2SPText, "%dDN",
-                                                                          players[1].upAndDown * -1);
-                                                    lv_label_set_text_fmt(ui_MP1V19HGSP1SPText, "%dUP",
+                                                    lv_label_set_text_fmt(
+                                                        ui_MP1V19HGSP2SPText, "%dDN",
+                                                        players[1].upAndDown * -1);
+                                                    lv_label_set_text_fmt(ui_MP1V19HGSP1SPText,
+                                                                          "%dUP",
                                                                           players[0].upAndDown);
                                                 }
                                                 else
                                                 {
-                                                    lv_label_set_text_fmt(ui_MP1V19HGSP1SPText, "E");
-                                                    lv_label_set_text_fmt(ui_MP1V19HGSP2SPText, "E");
+                                                    lv_label_set_text_fmt(ui_MP1V19HGSP1SPText,
+                                                                          "E");
+                                                    lv_label_set_text_fmt(ui_MP1V19HGSP2SPText,
+                                                                          "E");
                                                 }
                                             }
                                             else if (current_hole_mode == EIGHTEEN_HOLES)
-                                        {
-                                            // New 18-hole UI updates
-                                            if (players[0].upAndDown < 0)
                                             {
-                                                lv_label_set_text_fmt(ui_MP1V118HGSP1SPText, "%dDN",
-                                                                      players[0].upAndDown * -1);
-                                                lv_label_set_text_fmt(ui_MP1V118HGSP2SPText, "%dUP",
-                                                                      players[1].upAndDown);
-                                                DEBUG_DEBUG(MODULE_UI,
-                                                            "UI updated (18H) - Player 1: %dDN, "
-                                                            "Player 2: %dUP",
-                                                            players[0].upAndDown * -1,
-                                                            players[1].upAndDown);
+                                                // New 18-hole UI updates
+                                                if (players[0].upAndDown < 0)
+                                                {
+                                                    lv_label_set_text_fmt(
+                                                        ui_MP1V118HGSP1SPText, "%dDN",
+                                                        players[0].upAndDown * -1);
+                                                    lv_label_set_text_fmt(ui_MP1V118HGSP2SPText,
+                                                                          "%dUP",
+                                                                          players[1].upAndDown);
+                                                    DEBUG_DEBUG(
+                                                        MODULE_UI,
+                                                        "UI updated (18H) - Player 1: %dDN, "
+                                                        "Player 2: %dUP",
+                                                        players[0].upAndDown * -1,
+                                                        players[1].upAndDown);
+                                                }
+                                                else if (players[1].upAndDown < 0)
+                                                {
+                                                    lv_label_set_text_fmt(
+                                                        ui_MP1V118HGSP2SPText, "%dDN",
+                                                        players[1].upAndDown * -1);
+                                                    lv_label_set_text_fmt(ui_MP1V118HGSP1SPText,
+                                                                          "%dUP",
+                                                                          players[0].upAndDown);
+                                                    DEBUG_DEBUG(
+                                                        MODULE_UI,
+                                                        "UI updated (18H) - Player 1: %dUP, "
+                                                        "Player 2: %dDN",
+                                                        players[0].upAndDown,
+                                                        players[1].upAndDown * -1);
+                                                }
+                                                else
+                                                {
+                                                    lv_label_set_text_fmt(ui_MP1V118HGSP1SPText,
+                                                                          "E");
+                                                    lv_label_set_text_fmt(ui_MP1V118HGSP2SPText,
+                                                                          "E");
+                                                    DEBUG_DEBUG(MODULE_UI,
+                                                                "UI updated (18H) - Both players: "
+                                                                "E (Even)");
+                                                }
                                             }
-                                            else if (players[1].upAndDown < 0)
-                                            {
-                                                lv_label_set_text_fmt(ui_MP1V118HGSP2SPText, "%dDN",
-                                                                      players[1].upAndDown * -1);
-                                                lv_label_set_text_fmt(ui_MP1V118HGSP1SPText, "%dUP",
-                                                                      players[0].upAndDown);
-                                                DEBUG_DEBUG(MODULE_UI,
-                                                            "UI updated (18H) - Player 1: %dUP, "
-                                                            "Player 2: %dDN",
-                                                            players[0].upAndDown,
-                                                            players[1].upAndDown * -1);
-                                            }
-                                            else
-                                            {
-                                                lv_label_set_text_fmt(ui_MP1V118HGSP1SPText, "E");
-                                                lv_label_set_text_fmt(ui_MP1V118HGSP2SPText, "E");
-                                                DEBUG_DEBUG(
-                                                    MODULE_UI,
-                                                    "UI updated (18H) - Both players: E (Even)");
-                                            }
-                                        }
                                         }  // Close MATCH_PLAY_MODE_1V1 check
                                         else if (current_match_play_mode == MATCH_PLAY_MODE_2V2)
                                         {
@@ -2240,22 +2340,28 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                                 // 2v2 9-hole UI updates
                                                 if (players[0].upAndDown < 0)
                                                 {
-                                                    lv_label_set_text_fmt(ui_MP2V29HGST1SPText, "%dDN",
-                                                                          players[0].upAndDown * -1);
-                                                    lv_label_set_text_fmt(ui_MP2V29HGST2SPText, "%dUP",
+                                                    lv_label_set_text_fmt(
+                                                        ui_MP2V29HGST1SPText, "%dDN",
+                                                        players[0].upAndDown * -1);
+                                                    lv_label_set_text_fmt(ui_MP2V29HGST2SPText,
+                                                                          "%dUP",
                                                                           players[1].upAndDown);
                                                 }
                                                 else if (players[1].upAndDown < 0)
                                                 {
-                                                    lv_label_set_text_fmt(ui_MP2V29HGST2SPText, "%dDN",
-                                                                          players[1].upAndDown * -1);
-                                                    lv_label_set_text_fmt(ui_MP2V29HGST1SPText, "%dUP",
+                                                    lv_label_set_text_fmt(
+                                                        ui_MP2V29HGST2SPText, "%dDN",
+                                                        players[1].upAndDown * -1);
+                                                    lv_label_set_text_fmt(ui_MP2V29HGST1SPText,
+                                                                          "%dUP",
                                                                           players[0].upAndDown);
                                                 }
                                                 else
                                                 {
-                                                    lv_label_set_text_fmt(ui_MP2V29HGST1SPText, "E");
-                                                    lv_label_set_text_fmt(ui_MP2V29HGST2SPText, "E");
+                                                    lv_label_set_text_fmt(ui_MP2V29HGST1SPText,
+                                                                          "E");
+                                                    lv_label_set_text_fmt(ui_MP2V29HGST2SPText,
+                                                                          "E");
                                                 }
                                             }
                                             else if (current_hole_mode == EIGHTEEN_HOLES)
@@ -2263,34 +2369,43 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                                 // 2v2 18-hole UI updates
                                                 if (players[0].upAndDown < 0)
                                                 {
-                                                    lv_label_set_text_fmt(ui_MP2V218HGST1SPText, "%dDN",
-                                                                          players[0].upAndDown * -1);
-                                                    lv_label_set_text_fmt(ui_MP2V218HGST2SPText, "%dUP",
+                                                    lv_label_set_text_fmt(
+                                                        ui_MP2V218HGST1SPText, "%dDN",
+                                                        players[0].upAndDown * -1);
+                                                    lv_label_set_text_fmt(ui_MP2V218HGST2SPText,
+                                                                          "%dUP",
                                                                           players[1].upAndDown);
-                                                    DEBUG_DEBUG(MODULE_UI,
-                                                                "UI updated (2v2 18H) - Team 1: %dDN, "
-                                                                "Team 2: %dUP",
-                                                                players[0].upAndDown * -1,
-                                                                players[1].upAndDown);
+                                                    DEBUG_DEBUG(
+                                                        MODULE_UI,
+                                                        "UI updated (2v2 18H) - Team 1: %dDN, "
+                                                        "Team 2: %dUP",
+                                                        players[0].upAndDown * -1,
+                                                        players[1].upAndDown);
                                                 }
                                                 else if (players[1].upAndDown < 0)
                                                 {
-                                                    lv_label_set_text_fmt(ui_MP2V218HGST2SPText, "%dDN",
-                                                                          players[1].upAndDown * -1);
-                                                    lv_label_set_text_fmt(ui_MP2V218HGST1SPText, "%dUP",
+                                                    lv_label_set_text_fmt(
+                                                        ui_MP2V218HGST2SPText, "%dDN",
+                                                        players[1].upAndDown * -1);
+                                                    lv_label_set_text_fmt(ui_MP2V218HGST1SPText,
+                                                                          "%dUP",
                                                                           players[0].upAndDown);
-                                                    DEBUG_DEBUG(MODULE_UI,
-                                                                "UI updated (2v2 18H) - Team 1: %dUP, "
-                                                                "Team 2: %dDN",
-                                                                players[0].upAndDown,
-                                                                players[1].upAndDown * -1);
+                                                    DEBUG_DEBUG(
+                                                        MODULE_UI,
+                                                        "UI updated (2v2 18H) - Team 1: %dUP, "
+                                                        "Team 2: %dDN",
+                                                        players[0].upAndDown,
+                                                        players[1].upAndDown * -1);
                                                 }
                                                 else
                                                 {
-                                                    lv_label_set_text_fmt(ui_MP2V218HGST1SPText, "E");
-                                                    lv_label_set_text_fmt(ui_MP2V218HGST2SPText, "E");
+                                                    lv_label_set_text_fmt(ui_MP2V218HGST1SPText,
+                                                                          "E");
+                                                    lv_label_set_text_fmt(ui_MP2V218HGST2SPText,
+                                                                          "E");
                                                     DEBUG_DEBUG(MODULE_UI,
-                                                                "UI updated (2v2 18H) - Both teams: E (Even)");
+                                                                "UI updated (2v2 18H) - Both "
+                                                                "teams: E (Even)");
                                                 }
                                             }
                                         }  // Close MATCH_PLAY_MODE_2V2 check
@@ -2525,7 +2640,8 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                             lv_obj_t* t1_text        = NULL;
                                             lv_obj_t* t2_text        = NULL;
 
-                                            // Determine which UI elements to update based on hole mode
+                                            // Determine which UI elements to update based on hole
+                                            // mode
                                             if (current_hole_mode == NINE_HOLES)
                                             {
                                                 switch (completed_hole)
@@ -2568,26 +2684,28 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                                         // Update final score
                                                         if (players[0].upAndDown > 0)
                                                         {
-                                                            lv_label_set_text_fmt(ui_MP2V29HScT1STextF,
-                                                                                  "%dU",
-                                                                                  players[0].upAndDown);
-                                                            lv_label_set_text_fmt(ui_MP2V29HScT2STextF,
-                                                                                  "%dD",
-                                                                                  players[1].upAndDown * -1);
+                                                            lv_label_set_text_fmt(
+                                                                ui_MP2V29HScT1STextF, "%dU",
+                                                                players[0].upAndDown);
+                                                            lv_label_set_text_fmt(
+                                                                ui_MP2V29HScT2STextF, "%dD",
+                                                                players[1].upAndDown * -1);
                                                         }
                                                         else if (players[0].upAndDown < 0)
                                                         {
-                                                            lv_label_set_text_fmt(ui_MP2V29HScT1STextF,
-                                                                                  "%dD",
-                                                                                  players[0].upAndDown * -1);
-                                                            lv_label_set_text_fmt(ui_MP2V29HScT2STextF,
-                                                                                  "%dU",
-                                                                                  players[1].upAndDown);
+                                                            lv_label_set_text_fmt(
+                                                                ui_MP2V29HScT1STextF, "%dD",
+                                                                players[0].upAndDown * -1);
+                                                            lv_label_set_text_fmt(
+                                                                ui_MP2V29HScT2STextF, "%dU",
+                                                                players[1].upAndDown);
                                                         }
                                                         else
                                                         {
-                                                            lv_label_set_text(ui_MP2V29HScT1STextF, "E");
-                                                            lv_label_set_text(ui_MP2V29HScT2STextF, "E");
+                                                            lv_label_set_text(ui_MP2V29HScT1STextF,
+                                                                              "E");
+                                                            lv_label_set_text(ui_MP2V29HScT2STextF,
+                                                                              "E");
                                                         }
                                                         break;
                                                 }
@@ -2670,26 +2788,28 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                                         // Update final score for 18 holes
                                                         if (players[0].upAndDown > 0)
                                                         {
-                                                            lv_label_set_text_fmt(ui_MP2V218HScT1STextF,
-                                                                                  "%dU",
-                                                                                  players[0].upAndDown);
-                                                            lv_label_set_text_fmt(ui_MP2V218HScT2STextF,
-                                                                                  "%dD",
-                                                                                  players[1].upAndDown * -1);
+                                                            lv_label_set_text_fmt(
+                                                                ui_MP2V218HScT1STextF, "%dU",
+                                                                players[0].upAndDown);
+                                                            lv_label_set_text_fmt(
+                                                                ui_MP2V218HScT2STextF, "%dD",
+                                                                players[1].upAndDown * -1);
                                                         }
                                                         else if (players[0].upAndDown < 0)
                                                         {
-                                                            lv_label_set_text_fmt(ui_MP2V218HScT1STextF,
-                                                                                  "%dD",
-                                                                                  players[0].upAndDown * -1);
-                                                            lv_label_set_text_fmt(ui_MP2V218HScT2STextF,
-                                                                                  "%dU",
-                                                                                  players[1].upAndDown);
+                                                            lv_label_set_text_fmt(
+                                                                ui_MP2V218HScT1STextF, "%dD",
+                                                                players[0].upAndDown * -1);
+                                                            lv_label_set_text_fmt(
+                                                                ui_MP2V218HScT2STextF, "%dU",
+                                                                players[1].upAndDown);
                                                         }
                                                         else
                                                         {
-                                                            lv_label_set_text(ui_MP2V218HScT1STextF, "E");
-                                                            lv_label_set_text(ui_MP2V218HScT2STextF, "E");
+                                                            lv_label_set_text(ui_MP2V218HScT1STextF,
+                                                                              "E");
+                                                            lv_label_set_text(ui_MP2V218HScT2STextF,
+                                                                              "E");
                                                         }
                                                         break;
                                                 }
@@ -2702,18 +2822,19 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                                     // Team 1 is up
                                                     lv_label_set_text_fmt(t1_text, "%dU",
                                                                           players[0].upAndDown);
-                                                    lv_label_set_text_fmt(t2_text, "%dD",
-                                                                          players[1].upAndDown * -1);
+                                                    lv_label_set_text_fmt(
+                                                        t2_text, "%dD", players[1].upAndDown * -1);
                                                     DEBUG_DEBUG(MODULE_UI,
                                                                 "Scorecard Hole %d: T1=%dU, T2=%dD",
-                                                                completed_hole, players[0].upAndDown,
+                                                                completed_hole,
+                                                                players[0].upAndDown,
                                                                 players[1].upAndDown * -1);
                                                 }
                                                 else if (players[0].upAndDown < 0)
                                                 {
                                                     // Team 1 is down
-                                                    lv_label_set_text_fmt(t1_text, "%dD",
-                                                                          players[0].upAndDown * -1);
+                                                    lv_label_set_text_fmt(
+                                                        t1_text, "%dD", players[0].upAndDown * -1);
                                                     lv_label_set_text_fmt(t2_text, "%dU",
                                                                           players[1].upAndDown);
                                                     DEBUG_DEBUG(MODULE_UI,
@@ -2759,8 +2880,7 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                     player->detection_count = 0;
                                     DEBUG_INFO(MODULE_GAME,
                                                "Quota turn complete - Player %d, Hole %d",
-                                               current_player_index + 1,
-                                               player->current_hole);
+                                               current_player_index + 1, player->current_hole);
 
                                     // Check if any player completed their quota
                                     check_all_players_completed(current_game_mode);
@@ -2801,9 +2921,10 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                 }
                 else
                 {
-                    DEBUG_TRACE(MODULE_GPIO,
-                                "Sensor %d (pin %d) in debounce period (timer active) - ignoring event",
-                                sensor_index, pin_offset);
+                    DEBUG_TRACE(
+                        MODULE_GPIO,
+                        "Sensor %d (pin %d) in debounce period (timer active) - ignoring event",
+                        sensor_index, pin_offset);
                 }
             }
             else
@@ -3047,10 +3168,12 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                             lv_label_set_text_fmt(ui_Q2P9HGSP2SPar5PText, "%d",
                                                   players[1].par5_count);
                             DEBUG_INFO(MODULE_LOGIC,
-                                       "Quota 2P 9H updated - Balls:%d, P1(3pt:%d,4pt:%d,5pt:%d) P2(3pt:%d,4pt:%d,5pt:%d)",
-                                       detection_count,
-                                       players[0].par3_count, players[0].par4_count, players[0].par5_count,
-                                       players[1].par3_count, players[1].par4_count, players[1].par5_count);
+                                       "Quota 2P 9H updated - Balls:%d, P1(3pt:%d,4pt:%d,5pt:%d) "
+                                       "P2(3pt:%d,4pt:%d,5pt:%d)",
+                                       detection_count, players[0].par3_count,
+                                       players[0].par4_count, players[0].par5_count,
+                                       players[1].par3_count, players[1].par4_count,
+                                       players[1].par5_count);
                             break;
                     }
                     break;
@@ -3088,10 +3211,12 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                             lv_label_set_text_fmt(ui_Q2P18HGSP2SPar5PText, "%d",
                                                   players[1].par5_count);
                             DEBUG_INFO(MODULE_LOGIC,
-                                       "Quota 2P 18H updated - Balls:%d, P1(3pt:%d,4pt:%d,5pt:%d) P2(3pt:%d,4pt:%d,5pt:%d)",
-                                       detection_count,
-                                       players[0].par3_count, players[0].par4_count, players[0].par5_count,
-                                       players[1].par3_count, players[1].par4_count, players[1].par5_count);
+                                       "Quota 2P 18H updated - Balls:%d, P1(3pt:%d,4pt:%d,5pt:%d) "
+                                       "P2(3pt:%d,4pt:%d,5pt:%d)",
+                                       detection_count, players[0].par3_count,
+                                       players[0].par4_count, players[0].par5_count,
+                                       players[1].par3_count, players[1].par4_count,
+                                       players[1].par5_count);
                             break;
                     }
                     break;
