@@ -410,7 +410,101 @@ void three_player_highlight_pattern(GameMode game_mode, HoleMode hole_mode)
             DEBUG_TRACE(MODULE_UI, "Match Play mode - no three player highlighting defined");
             break;
         case GAME_MODE_QUOTA:
-            DEBUG_TRACE(MODULE_UI, "Quota mode - no three player highlighting defined");
+            switch (hole_mode)
+            {
+                case NINE_HOLES:
+                    DEBUG_DEBUG(MODULE_UI, "Quota 3P 9H highlighting");
+                    DEBUG_TRACE(MODULE_GAME, "Highlight Counter Value: %d", highliting_counter);
+
+                    if (highliting_counter == 1 || highliting_counter == 6 ||
+                        highliting_counter == 7 || highliting_counter == 12)
+                    {
+                        DEBUG_DEBUG(MODULE_UI, "Quota 3P 9H - Highlighting Player 1");
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP1SPar3Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP1SPar4Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP1SPar5Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP2SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP2SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP2SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP3SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP3SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP3SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                    }
+                    else if (highliting_counter == 2 || highliting_counter == 3 ||
+                             highliting_counter == 8 || highliting_counter == 9)
+                    {
+                        DEBUG_DEBUG(MODULE_UI, "Quota 3P 9H - Highlighting Player 2");
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP1SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP1SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP1SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP2SPar3Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP2SPar4Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP2SPar5Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP3SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP3SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP3SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                    }
+                    else
+                    {   // Cases 4,5,10,11
+                        DEBUG_DEBUG(MODULE_UI, "Quota 3P 9H - Highlighting Player 3");
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP1SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP1SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP1SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP2SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP2SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP2SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP3SPar3Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP3SPar4Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P9HGSP3SPar5Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                    }
+                    break;
+                case EIGHTEEN_HOLES:
+                    DEBUG_DEBUG(MODULE_UI, "Quota 3P 18H highlighting");
+                    DEBUG_TRACE(MODULE_GAME, "Highlight Counter Value: %d", highliting_counter);
+
+                    if (highliting_counter == 1 || highliting_counter == 6 ||
+                        highliting_counter == 7 || highliting_counter == 12)
+                    {
+                        DEBUG_DEBUG(MODULE_UI, "Quota 3P 18H - Highlighting Player 1");
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP1SPar3Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP1SPar4Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP1SPar5Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP2SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP2SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP2SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP3SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP3SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP3SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                    }
+                    else if (highliting_counter == 2 || highliting_counter == 3 ||
+                             highliting_counter == 8 || highliting_counter == 9)
+                    {
+                        DEBUG_DEBUG(MODULE_UI, "Quota 3P 18H - Highlighting Player 2");
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP1SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP1SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP1SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP2SPar3Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP2SPar4Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP2SPar5Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP3SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP3SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP3SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                    }
+                    else
+                    {   // Cases 4,5,10,11
+                        DEBUG_DEBUG(MODULE_UI, "Quota 3P 18H - Highlighting Player 3");
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP1SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP1SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP1SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP2SPar3Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP2SPar4Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP2SPar5Panel, lv_color_hex(COLOR_2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP3SPar3Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP3SPar4Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(ui_Q3P18HGSP3SPar5Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+                    }
+                    break;
+            }
             break;
         case GAME_MODE_VEGAS:
         case GAME_MODE_STROKE_PLAY:
@@ -737,6 +831,10 @@ void update_player_highlight(uint8_t detection_count, uint8_t current_hole, uint
                     if (num_players == 2)
                     {
                         two_player_highlight_pattern(GAME_MODE_QUOTA, current_hole_mode);
+                    }
+                    else if (num_players == 3)
+                    {
+                        three_player_highlight_pattern(GAME_MODE_QUOTA, current_hole_mode);
                     }
                     break;
             }
@@ -1149,6 +1247,70 @@ void check_all_players_completed(GameMode gameMode)
                         {
                             lv_obj_clear_flag(ui_Q2P18HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
                             lv_obj_clear_flag(ui_Q2P18HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+                        }
+                    }
+                    break;
+                case 3:
+                    // Check each player individually for first-to-finish
+                    if (player_is_finished[0] && !player_is_finished[1] && !player_is_finished[2])
+                    {
+                        update_flag = 1;
+                        set_sensors_enabled(0);
+                        DEBUG_INFO(MODULE_GAME, "Player 1 completed quota first! Score:%d",
+                                   players[0].score);
+                        PLAY_PLAYER1WINS_WAV;
+                        if (current_hole_mode == NINE_HOLES)
+                            lv_obj_clear_flag(ui_Q3P9HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
+                        else
+                            lv_obj_clear_flag(ui_Q3P18HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
+                    }
+                    else if (player_is_finished[1] && !player_is_finished[0] && !player_is_finished[2])
+                    {
+                        update_flag = 1;
+                        set_sensors_enabled(0);
+                        DEBUG_INFO(MODULE_GAME, "Player 2 completed quota first! Score:%d",
+                                   players[1].score);
+                        PLAY_PLAYER2WINS_WAV;
+                        if (current_hole_mode == NINE_HOLES)
+                            lv_obj_clear_flag(ui_Q3P9HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+                        else
+                            lv_obj_clear_flag(ui_Q3P18HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+                    }
+                    else if (player_is_finished[2] && !player_is_finished[0] && !player_is_finished[1])
+                    {
+                        update_flag = 1;
+                        set_sensors_enabled(0);
+                        DEBUG_INFO(MODULE_GAME, "Player 3 completed quota first! Score:%d",
+                                   players[2].score);
+                        PLAY_PLAYER3WINS_WAV;
+                        if (current_hole_mode == NINE_HOLES)
+                            lv_obj_clear_flag(ui_Q3P9HGSP3SCrown, LV_OBJ_FLAG_HIDDEN);
+                        else
+                            lv_obj_clear_flag(ui_Q3P18HGSP3SCrown, LV_OBJ_FLAG_HIDDEN);
+                    }
+                    else if (player_is_finished[0] || player_is_finished[1] || player_is_finished[2])
+                    {
+                        // Multiple players finished simultaneously - show all their crowns
+                        update_flag = 1;
+                        set_sensors_enabled(0);
+                        DEBUG_INFO(MODULE_GAME, "Multiple players completed quota simultaneously!");
+                        if (current_hole_mode == NINE_HOLES)
+                        {
+                            if (player_is_finished[0])
+                                lv_obj_clear_flag(ui_Q3P9HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
+                            if (player_is_finished[1])
+                                lv_obj_clear_flag(ui_Q3P9HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+                            if (player_is_finished[2])
+                                lv_obj_clear_flag(ui_Q3P9HGSP3SCrown, LV_OBJ_FLAG_HIDDEN);
+                        }
+                        else
+                        {
+                            if (player_is_finished[0])
+                                lv_obj_clear_flag(ui_Q3P18HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
+                            if (player_is_finished[1])
+                                lv_obj_clear_flag(ui_Q3P18HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+                            if (player_is_finished[2])
+                                lv_obj_clear_flag(ui_Q3P18HGSP3SCrown, LV_OBJ_FLAG_HIDDEN);
                         }
                     }
                     break;
@@ -2899,6 +3061,24 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                                             SOUND_DELAY_TURN_SWITCH_MS);
                                         }
                                     }
+                                    else if (!update_flag && num_players == 3)
+                                    {
+                                        if (current_player_index == 0)
+                                        {
+                                            play_sound_once(load_sound_effect(SOUND_PLAYERTWO_WAV),
+                                                            SOUND_DELAY_TURN_SWITCH_MS);
+                                        }
+                                        else if (current_player_index == 1)
+                                        {
+                                            play_sound_once(load_sound_effect(SOUND_PLAYERTHREE_WAV),
+                                                            SOUND_DELAY_TURN_SWITCH_MS);
+                                        }
+                                        else
+                                        {
+                                            play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV),
+                                                            SOUND_DELAY_TURN_SWITCH_MS);
+                                        }
+                                    }
                                     break;
 
                                 case GAME_MODE_VEGAS:
@@ -3167,13 +3347,28 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                                   players[1].par4_count);
                             lv_label_set_text_fmt(ui_Q2P9HGSP2SPar5PText, "%d",
                                                   players[1].par5_count);
-                            DEBUG_INFO(MODULE_LOGIC,
-                                       "Quota 2P 9H updated - Balls:%d, P1(3pt:%d,4pt:%d,5pt:%d) "
-                                       "P2(3pt:%d,4pt:%d,5pt:%d)",
-                                       detection_count, players[0].par3_count,
-                                       players[0].par4_count, players[0].par5_count,
-                                       players[1].par3_count, players[1].par4_count,
-                                       players[1].par5_count);
+                            break;
+                        case 3:
+                            DEBUG_TRACE(MODULE_LOGIC, "Quota 3P 9H");
+                            lv_label_set_text_fmt(ui_Q3P9HGSBCPText, "%d", detection_count);
+                            lv_label_set_text_fmt(ui_Q3P9HGSP1SPar3PText, "%d",
+                                                  players[0].par3_count);
+                            lv_label_set_text_fmt(ui_Q3P9HGSP1SPar4PText, "%d",
+                                                  players[0].par4_count);
+                            lv_label_set_text_fmt(ui_Q3P9HGSP1SPar5PText, "%d",
+                                                  players[0].par5_count);
+                            lv_label_set_text_fmt(ui_Q3P9HGSP2SPar3PText, "%d",
+                                                  players[1].par3_count);
+                            lv_label_set_text_fmt(ui_Q3P9HGSP2SPar4PText, "%d",
+                                                  players[1].par4_count);
+                            lv_label_set_text_fmt(ui_Q3P9HGSP2SPar5PText, "%d",
+                                                  players[1].par5_count);
+                            lv_label_set_text_fmt(ui_Q3P9HGSP3SPar3PText, "%d",
+                                                  players[2].par3_count);
+                            lv_label_set_text_fmt(ui_Q3P9HGSP3SPar4PText, "%d",
+                                                  players[2].par4_count);
+                            lv_label_set_text_fmt(ui_Q3P9HGSP3SPar5PText, "%d",
+                                                  players[2].par5_count);
                             break;
                     }
                     break;
@@ -3210,13 +3405,28 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                                   players[1].par4_count);
                             lv_label_set_text_fmt(ui_Q2P18HGSP2SPar5PText, "%d",
                                                   players[1].par5_count);
-                            DEBUG_INFO(MODULE_LOGIC,
-                                       "Quota 2P 18H updated - Balls:%d, P1(3pt:%d,4pt:%d,5pt:%d) "
-                                       "P2(3pt:%d,4pt:%d,5pt:%d)",
-                                       detection_count, players[0].par3_count,
-                                       players[0].par4_count, players[0].par5_count,
-                                       players[1].par3_count, players[1].par4_count,
-                                       players[1].par5_count);
+                            break;
+                        case 3:
+                            DEBUG_TRACE(MODULE_LOGIC, "Quota 3P 18H");
+                            lv_label_set_text_fmt(ui_Q3P18HGSBCPText, "%d", detection_count);
+                            lv_label_set_text_fmt(ui_Q3P18HGSP1SPar3PText, "%d",
+                                                  players[0].par3_count);
+                            lv_label_set_text_fmt(ui_Q3P18HGSP1SPar4PText, "%d",
+                                                  players[0].par4_count);
+                            lv_label_set_text_fmt(ui_Q3P18HGSP1SPar5PText, "%d",
+                                                  players[0].par5_count);
+                            lv_label_set_text_fmt(ui_Q3P18HGSP2SPar3PText, "%d",
+                                                  players[1].par3_count);
+                            lv_label_set_text_fmt(ui_Q3P18HGSP2SPar4PText, "%d",
+                                                  players[1].par4_count);
+                            lv_label_set_text_fmt(ui_Q3P18HGSP2SPar5PText, "%d",
+                                                  players[1].par5_count);
+                            lv_label_set_text_fmt(ui_Q3P18HGSP3SPar3PText, "%d",
+                                                  players[2].par3_count);
+                            lv_label_set_text_fmt(ui_Q3P18HGSP3SPar4PText, "%d",
+                                                  players[2].par4_count);
+                            lv_label_set_text_fmt(ui_Q3P18HGSP3SPar5PText, "%d",
+                                                  players[2].par5_count);
                             break;
                     }
                     break;
