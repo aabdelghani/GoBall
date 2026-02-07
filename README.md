@@ -1,136 +1,185 @@
-# Visual Studio Code and CMake and Eclipse-CDT IDE project for SquareLine Studio and LVGL - with 64bit Raspberry Pi as compile-target
+# GoBall - Mini Golf Scoring System
 
+A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR sensor detection, LED strip feedback, and voice announcements. Built with SDL2 backend for cross-compilation from a Linux host to aarch64 Raspberry Pi targets.
 
-This project can be used to cross-build Raspberry Pi C/C++ UI code exported from SquareLine Studio.
+## Features
 
+### Game Modes
+- **Stroke Play** - 1 to 4 players, 9 or 18 holes
+- **Match Play 1v1** - Head-to-head, 9 or 18 holes with early victory detection
+- **Match Play 2v2** - Team-based, 9 or 18 holes with early victory detection
+- **Quota Points** - 1 to 4 players (coming soon)
+- **Vegas Quota Points** - 1 to 4 players (coming soon)
 
-## Prerequisites
+### Scoring
+- IR sensors detect ball entry into 4 scoring holes: 3 points, 4 points, 5 points, and 0 points
+- Automatic score tracking and cumulative scorecard display
+- Match Play uses "Up & Down" format (e.g., "3 & 2") with early victory when lead exceeds remaining holes
 
-General note: Please avoid folder-names and filenames containing non-ASCII (special/accented/foreign) characters for the installed tools and your exported projects. Some build-tools and terminals/OS-es don't handle those characters well or interpret them differently, which can cause issues during the build-process.
+### Audio
+- Voice announcements for player turns, game mode selection, and winner declarations
+- 5 randomized winner voice lines per player/team for variety
+- Configurable sound delays for announcements and turn switches
+- Mute/unmute support
 
+### Visual Feedback
+- WS2812 LED strip integration via PIO on Raspberry Pi 5
+- Color-coded flash on scoring (green for points, white for zero)
+- Player turn highlighting patterns
 
-### Compiler (gcc) and generator (make):
+### UI
+- Built with LVGL and SquareLine Studio
+- Automatic screen transitions to scorecard on game completion
+- Crown icon for Match Play leader
+- Per-hole and cumulative score display
 
-#### For CMAke/VScode get and install the essential build-tools (binutils,compiler,linker,make,etc.) on your host-PC if you don't have them yet:
+## Hardware
 
-- On Windows [MinGW](https://www.mingw-w64.org/) contains them, the POSIX+SEH+UCRT-build variant at their [GitHub repository](https://github.com/niXman/mingw-builds-binaries/releases) works fine on Windows 10:
-  - Download for example: [x86_64-13.2.0-release-posix-seh-ucrt-rt_v11-rev0.7z](https://github.com/niXman/mingw-builds-binaries/releases/download/13.2.0-rt_v11-rev0/x86_64-13.2.0-release-posix-seh-ucrt-rt_v11-rev0.7z)
-  - Extract/copy the compressed 7z file's included 'mingw64' folder to C:\  (Can be other folder but we continue with this here.)
-  - You need to add the 'C:\mingw64\bin' folder to your PATH environment variable (Unfortunately there's no up-to-date mingw64 installer that sets it for us.)
-  (On Windows 10 right-click on This PC, go to Advanced System Settings / Environment Variables, select 'Path' and add "C:\mingw64\bin" to an empty line.)
-  - (You can check if the setting works by typing 'mingw32-make' on command line.)
-- On Linux type in the Terminal: `sudo apt-get install gcc g++ gdb build-essential`
-- On MacOS install latest Xcode
+- Raspberry Pi 5
+- 7" touchscreen display (SDL2/DRM backend)
+- 4x IR sensors (GPIO pins 17, 26, 27, 24)
+- WS2812 LED strip (via PIO)
+- Speaker/amplifier for audio output
 
-#### For Eclipse CDT you need to get and install the GNU 'Make' build-tool on your host-PC if you don't have it yet (Eclipse will use it in the background):
+## Project Structure
 
-- On Windows [Make tool Windows support webpage](https://gnuwin32.sourceforge.net/packages/make.htm) directs to an installer:
-  - Download the installer: [Make Tool Windows Installer](https://sourceforge.net/projects/gnuwin32/files/make/3.81/make-3.81.exe)
-  - You need to add the 'C:\Program Files (x86)\GnuWin32\bin' folder to your PATH environment variable (Unfortunately there's no Make installer that sets it for us.)
-  (On Windows 10 right-click on This PC, go to Advanced System Settings / Environment Variables, select 'Path' and add the folder-path mentioned above to an empty line.)
-  - (You can check if the setting works by typing 'make' on command line.)
-- On Linux type in the Terminal: `sudo apt-get install make`
-- On MacOS install latest Xcode
+```
+├── main.c                      # Application entry point
+├── CMakeLists.txt              # Build configuration
+├── modules/
+│   ├── debug/                  # Configurable debug logging (ERROR/WARN/INFO/DEBUG/TRACE)
+│   ├── game_modes/             # Game logic
+│   │   ├── strokeplay.c/h      # Stroke play scoring
+│   │   ├── matchplay.c/h       # Match play scoring with early victory
+│   │   ├── game_modes.h        # Game mode enums
+│   │   └── player.h            # Player struct definition
+│   ├── game_sounds/            # WAV audio assets
+│   ├── led_logic/              # WS2812 LED strip control
+│   ├── logic/                  # GPIO event handling, debounce, game flow
+│   ├── sound_logic/            # SDL2_mixer audio system
+│   └── ui_logic/               # UI event handlers
+├── ui/                         # LVGL UI (exported from SquareLine Studio)
+│   ├── screens/                # All game screens
+│   ├── images/                 # Image assets (as C arrays)
+│   ├── fonts/                  # Font assets
+│   └── components/             # Reusable UI components
+├── sdl2-dev-rpi64/             # Pre-built SDL2 for aarch64 cross-compilation
+├── utils/
+│   ├── piolib/                 # PIO library for WS2812 LED control
+│   ├── autostart/              # Desktop files for kiosk mode
+│   └── test/                   # Test utilities and sound tests
+├── tools/
+│   └── gpio_loopback_simulator.py  # GPIO test simulator
+├── scripts/                    # Build and dependency scripts
+└── Dockerfile                  # Docker cross-compilation environment
+```
 
+## Building
 
-### To compile for Raspberry you'll need the cross-compiler targeting 64bit ARM architecture ('aarch64')
+### Prerequisites
 
-Download one 'GNU/Linux-target' variant for your host-OS from ARM's official homepage:
+- **Host**: Linux with `gcc`, `cmake`, `make`
+- **Cross-compiler**: ARM GNU Toolchain (`aarch64-none-linux-gnu-gcc`)
+  - [ARM GNU Toolchain 12.3](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) for RPi OS 12 (Bookworm)
+  - [ARM GNU Toolchain 10.2](https://developer.arm.com/downloads/-/gnu-a) for RPi OS 11 (Bullseye)
+- **Target RPi packages**: `libsdl2-2.0-0`, `libsdl2-mixer-2.0-0`
 
-- If your RPI has the new Raspberry Pi OS 12 (Bookworm having glibc-2.36) you can go on by downloading e.g. gcc-arm-12.3 (having glibc-2.34). (But the other option below, gcc-arm-10.2, works as well.)
-  - Find it at webpage [Current ARM GNU Toolchain downloads](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)
-  - For Windows choose the exe installer which sets PATH environment variable for you (be sure to check that option when asked!): [arm-gnu-toolchain-12.3.rel1-mingw-w64-i686-aarch64-none-linux-gnu.exe](https://developer.arm.com/-/media/Files/downloads/gnu/12.3.rel1/binrel/arm-gnu-toolchain-12.3.rel1-mingw-w64-i686-aarch64-none-linux-gnu.exe)
-  - For Linux: [arm-gnu-toolchain-12.3.rel1-x86_64-aarch64-none-linux-gnu.tar.xz](https://developer.arm.com/-/media/Files/downloads/gnu/12.3.rel1/binrel/arm-gnu-toolchain-12.3.rel1-x86_64-aarch64-none-linux-gnu.tar.xz)
-  (After extracting the package to your preferred place you need to add the contained 'bin' folder to your PATH in ~/.profile so you can run aarch64-none-linux-gnu-gcc and the others from any folder.)
-  - For OSX it seems there's only source-code distribution
+### Command-Line Build
 
-- If the RPI has the older Raspberry Pi OS 11 (Bullseye having glibc-2.31) you need to download gcc-arm-10.2 (having glibc-2.31). (Executables built with this work in the new Raspberry Pi OS 12 as well.)
-  - Find it at webpage [Discontinued ARM A-profile CPU toolchain downloads](https://developer.arm.com/downloads/-/gnu-a)
-  - For Windows (MinGW): [gcc-arm-10.2-2020.11-mingw-w64-i686-aarch64-none-linux-gnu.tar.xz](https://developer.arm.com/-/media/Files/downloads/gnu-a/10.2-2020.11/binrel/gcc-arm-10.2-2020.11-mingw-w64-i686-aarch64-none-linux-gnu.tar.xz)
-  - For Linux: [gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu.tar.xz](https://developer.arm.com/-/media/Files/downloads/gnu-a/10.2-2020.11/binrel/gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu.tar.xz)
-  - After extracting these packages to your preferred place you need to add the contained 'bin' folder to your PATH so you can run `aarch64-none-linux-gnu-gcc` and the others from any folder.
-  (Alternatively you can install by package manager on Linux, for example in LMDE 5 the 10.2 version of gcc-arm could be installed by: `sudo apt-get install gcc-aarch64-linux-gnu` but filenames lack the 'none' part and CMakeLists.txt might need to be changed.)
-  (The gcc-aarch64-linux-gnu package doesn't install C++ by default, and the new LVGL has some C++ libraries which Eclipse now might require C++ for, in this case `sudo apt install g++-aarch64-linux-gnu` might be needed as well.)
-  (For that `aarch64-linux-gnu-gcc` there's a `CMakeLists-repository-GCC.txt` included which is used by `build-repository-GCC.sh` build-script.)
+```bash
+# Native cross-compile
+./build-cross.sh
 
-- LVGL is set to use SDL2 as a backend (beside GlibC). Original SDL2 development-library is compiled and included in this OBP file to save you from the hassles of getting and compiling it yourself
-  - (The produced Raspberry Pi executable is dynamically linked, so it needs libSDL2 runtime-library to run. Raspberry Pi OS should have SDL2 runtime-library by default but you can install it by `sudo apt-get install libsdl2-2.0-0`)
-  - The generated executable can also run on Raspberry Pi Os Lite from the console without a desktop environment with an SDL2 supporting that. Unfortunately SDL on Raspberry Pi comes without KMSDRM compiled in so you need to rebuild it with KMSDRM support enabled.
-    ( Get the SDL2 source code, use `./configure --prefix=$PWD/RpiOSlite-SDL2 --enable-video-kmsdrm` to generate a folder of SDL2 with enabled KMSDRM, then use the usual `make` to build, and copy the folder-content to system or use `make install` to install this custom SDL2 on the OS.)
+# Or with Docker (no local toolchain needed)
+./docker-build-and-run.sh
+```
 
-### Builder:
+### VSCode Build
 
-#### For CMake/VScode building you need to get CMake tool to generate the build-chain (makefiles) for the host PC's platform:
+1. Open the project folder in VSCode
+2. Install C/C++ Extension Pack and CMake Tools
+3. Select the aarch64 toolchain from the bottom toolbar
+4. Click Build
 
-- For Windows go to [CMake download page](https://cmake.org/download/) and select the [CMake MSI-installer binary distribution](https://github.com/Kitware/CMake/releases/download/v3.28.0-rc2/cmake-3.28.0-rc2-windows-x86_64.msi)
-  (When asked by the installer, select the option that will take care of setting the PATH variable for the cmake executable.)
-- For Linux you just need to get and install CMake from the repository, for example `sudo apt-get install cmake`
+### Deploy to Raspberry Pi
 
-- If you want GUI-based build you can get and install [Visual Studio Code](https://code.visualstudio.com/download)
-  - After running Visual Studio Code, you need to download 2 extensions: 'C/C++ Extension Pack' and 'CMake Tools'
+```bash
+scp build-cross/build/SquareLine_Project pi@<rpi-ip>:~
+# Or use docker output:
+scp docker-output/SquareLine_Project pi@<rpi-ip>:~
+```
 
-#### For building with Eclipse you should have Eclipse CDT installed on your machine:
-- Download it from [Eclipse Download Page](https://www.eclipse.org/downloads/)
-- When asked about variants, choose Eclipse for C/C++ Developers from the list (it's usually abbreviated as CDT)
-- Wait for the installation to finish, it might take a while (and seem to stall falsely complaining about slow download, but ignore it and wait patiently.)
+### GPIO Test Simulator
 
+For testing without physical IR sensors, use the loopback simulator on the Pi itself:
 
+```bash
+python3 tools/gpio_loopback_simulator.py
+```
 
-## Usage - configuring and building the project
+## Configuration
 
+### Sound Timing (modules/sound_logic/sound_logic_event.h)
+| Define | Default | Description |
+|--------|---------|-------------|
+| `SOUND_DELAY_PLAYER_ANNOUNCE_MS` | 750ms | Player turn announcement delay |
+| `SOUND_DELAY_TEAM_ANNOUNCE_MS` | 750ms | Team turn announcement delay |
+| `SOUND_DELAY_PLAYER_WINS_MS` | 750ms | Winner announcement delay |
+| `SOUND_DELAY_TEAM_WINS_MS` | 750ms | Team winner announcement delay |
+| `SOUND_DELAY_TURN_SWITCH_MS` | 500ms | Turn switch announcement delay |
 
-You have probably selected the Raspberry Pi board already and created a project with it in SquareLine Studio.
-In SquareLine Studio click 'Create Template Project' and select the folder to save it to.
+### Sensor Debounce (modules/logic/gpio_event.h)
+| Define | Default | Description |
+|--------|---------|-------------|
+| `DEBOUNCE_TIME_MS` | 3000ms | Signal-based POSIX timer debounce |
 
+### Debug Levels (modules/debug/debug.h)
+Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`, `DEBUG(4)`, `TRACE(5)`
 
-### If you chose CMake and command-line build is your preferred way:
+## Changelog
 
-#### Navigate to the exported project-folder and you'll see two batch-files (they take care of handling 'build' folder):
-- On Windows you can run `build.bat` to build the project for you
-- On Linux you can run `build.sh`  (You might need to set its execution-privilege by `chmod 755 build.sh` if it changed in the unzipped exported project-template.)
-  (If you have the aarch64 GCC installed from linux repository, `build-repository-GCC.sh` should work instead.)
+### 02/03/2026
+- Match Play (1v1 & 2v2, 9/18 holes) now automatically navigates to scorecard on game end
+- Match Play announces winner from pool of 5 random voice lines with delay
+- Stroke Play (1-4 players, 9/18 holes) auto-navigates to scorecard and announces winner
+- Fix: End of Match Play no longer says hardcoded "Player 1 Turn"
+- Fix: Debounce changed from time-based to interrupt-based using POSIX signals (3s debounce)
+- All sound timing delays consolidated into configurable macros
+- Added GPIO loopback test simulator
 
-#### You can also do the cmake steps manually:
-- First go to the 'build' folder and to create the build/make-files type:
-  - On Windows: `cmake -G "MinGW Makefiles" ..`
-  - On Linux: `cmake ..` or `cmake -G "Unix Makefiles" ..`  (or if you have and want Ninja-build, `cmake -G "Ninja" ..`)
-- When make-files are ready, you can finally build the project by:
-  - On Windows: `mingw32-make`
-  - On Linux: `make`  (or `ninja` if you selected this one in the previous step)
+### 02/02/2026
+- Match Play 2v2 (9 and 18 holes) fully implemented and working
+- Match Play 1v1 (18 holes) implemented with proper reset
+- Crown icon added for Match Play leader (1v1 and 2v2, 9 and 18 holes)
+- Fix: Stops announcing points after game completion (crown displayed)
+- Fix: Player name announced at each turn for 1v1 (9 and 18 holes)
+- Scorecard for Match Play working with proper ball/hole reset
 
+### 01/12/2026
+- Match Play scorecard now functional
 
-### If you want to build in VScode (CMake-based build):
-- Just open the project in it by 'Open Folder' (in 'File' menu) and select the exported project-template's folder.
-  - If asked, allow it to download and install the CMake extension.
-  - To continue you might need to press OK that you trust the source (probably asked because of included SDL binaries)
-- Open the `main.c` file, and if asked allow it to download and install the C/C++ extension.
-- Select the build toolkit on the bottom toolbar. (For example `GCC 10.2.1 aarch64-linux-gnu-gcc` on Linux/MinGW)
-  - (You can choose 'Unspecified' and let the toolchain given by CMake settings be used, that works too.)
-- Configure the CMake project with the `CMake: ...` button on the bottom toolbar. (Select preferred release type)
-- Build the project with the `Build` button on the bottom toolbar.
+### 01/11/2026
+- Fixed Docker build for both release and debug configurations
 
+### 11/05/2025
+- Match Play 1v1 (9 holes) corner case: player comeback calculated correctly
+- Fix: Sounds no longer play after game completion
+- Added configurable debug logging system (activate/deactivate per module)
 
-### If you want to build in Eclipse:
+### 11/04/2025
+- Match Play 1v1 (9 holes) initial implementation with UI updates
 
-#### Without CMake being involved:
-- Import the project: File / Import ... / General / Existing Projects into Workspace
-- Select the project-template folder exported by Squareline Studio and click 'Finish'.
-- Open the `main.c` file.
-- Pressing the hammer (build) button will build the project with make.
-  (In case the `gcc-aarch64-linux-gnu` is installed on linux from repository, you might need to change the prefix from `aarch64-none-linux-gnu-` to `aarch64-linux-gnu-` in Project Properties under C/C++ Build in Settings / Tool Settings / Cross Settings.)
+### 10/20/2025
+- Abstracted game modes into dedicated `game_modes/` directory (strokeplay, matchplay)
 
-#### Or if you want to build in Eclipse-IDE with makefile generated by CMake:
-- While Eclipse project settings aren't exported into the template, CMake has the ability to create Eclipse project-files (tested on Linux):
-  - In the project-folder (not in the 'build' folder) type `cmake -G "Eclipse CDT4 - Unix Makefiles" .`
-  - The created .settings folder and .cproject and .project files will allow the opening of the project-folder from Eclipse
-    - (We don't distribute the Eclipse project files by default because they contain absolute paths which are better generated on-the-fly.)
-  - In Eclipse go to File / Import / Existing Projects into Workspace, select project-folder ('root directory') and click finish
-  - Pressing the hammer (build) button will build the project with make (on windows you might need to rename mingw32-make to make or create a link to it called 'make')
+### 10/14/2025
+- Added Quota Points, Vegas Quota Points, and Match Play mode structures
 
-
-### To test/run:
-- You can copy the generated executable file to the Raspberry by pendrive but setting up an SSH is better:
-  - Transfer the generated executable file to your Raspberry PI, e.g.: scp <executable> raspberrypi:~
-- Run the executable on the Raspberry PI ( from terminal / midnight-commander / file-browser or 'run' dialog )
-  - (You may also test the built binary beforehand with a QEMU emulated Raspberry Pi on the host machine.)
-
+### Earlier
+- Stroke Play 1-4 players (9/18 holes) with scoring, highlighting, and scorecard
+- Sound integration: game sounds, player turn announcements, point announcements
+- LED strip integration with color-coded scoring feedback
+- Non-blocking audio using `play_sound_once` timer system
+- Player turn voice only after completing all balls (not every sensor trigger)
+- Fix: Sensor-triggered scoring no longer occurs on main menu screen (`sensors_enabled` flag)
+- Fix: 18-hole 2-player mode now correctly records final score on scorecard
