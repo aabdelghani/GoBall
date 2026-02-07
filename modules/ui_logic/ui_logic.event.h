@@ -6,8 +6,8 @@
 
 #include "../../ui/ui.h"
 #include "../game_modes/game_modes.h"
+#include "../game_modes/quotaplay.h"
 #include "../logic/gpio_event.h"
-
 #define MAX_PLAYERS 4
 
 // Declare shared variables

@@ -15,10 +15,11 @@ void    set_game_mode(GameMode mode)
     {
         current_game_mode = mode;
         DEBUG_INFO(MODULE_UI, "Game mode set to: %d (%s)", mode,
-                   (mode == GAME_MODE_STROKE_PLAY) ? "Stroke Play" :
-                   (mode == GAME_MODE_MATCH_PLAY) ? "Match Play" :
-                   (mode == GAME_MODE_QUOTA) ? "Quota" :
-                   (mode == GAME_MODE_VEGAS) ? "Vegas" : "Unknown");
+                   (mode == GAME_MODE_STROKE_PLAY)  ? "Stroke Play"
+                   : (mode == GAME_MODE_MATCH_PLAY) ? "Match Play"
+                   : (mode == GAME_MODE_QUOTA)      ? "Quota"
+                   : (mode == GAME_MODE_VEGAS)      ? "Vegas"
+                                                    : "Unknown");
     }
     DEBUG_INFO(MODULE_UI, "=========================================");
 }
@@ -76,8 +77,8 @@ void set_num_players(uint8_t new_num_players)
     }
     num_players = new_num_players;
     DEBUG_INFO(MODULE_UI, "Number of players set to: %d", num_players);
-    DEBUG_INFO(MODULE_UI, "Current settings: game_mode=%d, num_players=%d",
-               current_game_mode, num_players);
+    DEBUG_INFO(MODULE_UI, "Current settings: game_mode=%d, num_players=%d", current_game_mode,
+               num_players);
     DEBUG_INFO(MODULE_UI, "=============================================");
     for (uint8_t i = 0; i < num_players; i++)
     {
@@ -98,10 +99,19 @@ void reset_scores(void)
         players[i].score           = 0;
         players[i].current_hole    = 0;
         players[i].detection_count = 0;
-        players[i].par3_count      = QUOTA_9H_PAR3;
-        players[i].par4_count      = QUOTA_9H_PAR4;
-        players[i].par5_count      = QUOTA_9H_PAR5;
-        final_scores[i]            = 0;
+        if (current_hole_mode == EIGHTEEN_HOLES)
+        {
+            players[i].par3_count = QUOTA_18H_PAR3;
+            players[i].par4_count = QUOTA_18H_PAR4;
+            players[i].par5_count = QUOTA_18H_PAR5;
+        }
+        else
+        {
+            players[i].par3_count = QUOTA_9H_PAR3;
+            players[i].par4_count = QUOTA_9H_PAR4;
+            players[i].par5_count = QUOTA_9H_PAR5;
+        }
+        final_scores[i] = 0;
 
         // Reset score arrays
         for (uint8_t j = 0; j < 9; j++)

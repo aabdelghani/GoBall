@@ -3265,6 +3265,17 @@ void ui_event_QPSS2PButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_Q2PHSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Q2PHSScreen_screen_init);
         _ui_screen_delete(&ui_QPSScreen);
+        RESET_SCORES
+        ENABLE_SENSORS
+        SET_TWO_PLAYER
+        SET_GAME_MODE_QUOTA
+        PLAY_TWOPLAYERS_SOUND
+        players[0].par3_count = QUOTA_9H_PAR3;
+        players[0].par4_count = QUOTA_9H_PAR4;
+        players[0].par5_count = QUOTA_9H_PAR5;
+        players[1].par3_count = QUOTA_9H_PAR3;
+        players[1].par4_count = QUOTA_9H_PAR4;
+        players[1].par5_count = QUOTA_9H_PAR5;
     }
 }
 
@@ -3275,6 +3286,17 @@ void ui_event_QPSS2PBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_Q2PHSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Q2PHSScreen_screen_init);
         _ui_screen_delete(&ui_QPSScreen);
+        RESET_SCORES
+        ENABLE_SENSORS
+        SET_TWO_PLAYER
+        SET_GAME_MODE_QUOTA
+        PLAY_TWOPLAYERS_SOUND
+        players[0].par3_count = QUOTA_9H_PAR3;
+        players[0].par4_count = QUOTA_9H_PAR4;
+        players[0].par5_count = QUOTA_9H_PAR5;
+        players[1].par3_count = QUOTA_9H_PAR3;
+        players[1].par4_count = QUOTA_9H_PAR4;
+        players[1].par5_count = QUOTA_9H_PAR5;
     }
 }
 
@@ -4147,6 +4169,17 @@ void ui_event_Q2PHS9HButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_Q2P9HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Q2P9HGScreen_screen_init);
         _ui_screen_delete(&ui_Q2PHSScreen);
+        PLAY_NINEHOLES_SOUND
+        SET_HOLES_9
+        players[0].par3_count = QUOTA_9H_PAR3;
+        players[0].par4_count = QUOTA_9H_PAR4;
+        players[0].par5_count = QUOTA_9H_PAR5;
+        players[1].par3_count = QUOTA_9H_PAR3;
+        players[1].par4_count = QUOTA_9H_PAR4;
+        players[1].par5_count = QUOTA_9H_PAR5;
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
     }
 }
 
@@ -4157,6 +4190,17 @@ void ui_event_Q2PHS9HBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_Q2P9HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Q2P9HGScreen_screen_init);
         _ui_screen_delete(&ui_Q2PHSScreen);
+        PLAY_NINEHOLES_SOUND
+        SET_HOLES_9
+        players[0].par3_count = QUOTA_9H_PAR3;
+        players[0].par4_count = QUOTA_9H_PAR4;
+        players[0].par5_count = QUOTA_9H_PAR5;
+        players[1].par3_count = QUOTA_9H_PAR3;
+        players[1].par4_count = QUOTA_9H_PAR4;
+        players[1].par5_count = QUOTA_9H_PAR5;
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
     }
 }
 
@@ -4167,6 +4211,17 @@ void ui_event_Q2PHS18HButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_Q2P18HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Q2P18HGScreen_screen_init);
         _ui_screen_delete(&ui_Q2PHSScreen);
+        PLAY_EIGHTEENHOLES_SOUND
+        SET_HOLES_18
+        players[0].par3_count = QUOTA_18H_PAR3;
+        players[0].par4_count = QUOTA_18H_PAR4;
+        players[0].par5_count = QUOTA_18H_PAR5;
+        players[1].par3_count = QUOTA_18H_PAR3;
+        players[1].par4_count = QUOTA_18H_PAR4;
+        players[1].par5_count = QUOTA_18H_PAR5;
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
     }
 }
 
@@ -4177,6 +4232,17 @@ void ui_event_Q2PHS18HBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_Q2P18HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Q2P18HGScreen_screen_init);
         _ui_screen_delete(&ui_Q2PHSScreen);
+        PLAY_EIGHTEENHOLES_SOUND
+        SET_HOLES_18
+        players[0].par3_count = QUOTA_18H_PAR3;
+        players[0].par4_count = QUOTA_18H_PAR4;
+        players[0].par5_count = QUOTA_18H_PAR5;
+        players[1].par3_count = QUOTA_18H_PAR3;
+        players[1].par4_count = QUOTA_18H_PAR4;
+        players[1].par5_count = QUOTA_18H_PAR5;
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
     }
 }
 
@@ -5709,7 +5775,7 @@ void ui_event_Q1P9HGSMMButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q1P9HGScreen);
-
+        DISABLE_SENSORS
         PLAY_BACKBTN_SOUND
     }
 }
@@ -5721,7 +5787,7 @@ void ui_event_Q1P9HGSMMBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q1P9HGScreen);
-
+        DISABLE_SENSORS
         PLAY_BACKBTN_SOUND
     }
 }
@@ -5733,7 +5799,7 @@ void ui_event_Q1P18HGSMMButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q1P18HGScreen);
-
+        DISABLE_SENSORS
         PLAY_BACKBTN_SOUND
     }
 }
@@ -5745,9 +5811,8 @@ void ui_event_Q1P18HGSMMBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q1P18HGScreen);
-
+        DISABLE_SENSORS
         PLAY_BACKBTN_SOUND
-        
     }
 }
 
@@ -5758,6 +5823,8 @@ void ui_event_Q2P9HGSMMButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q2P9HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5768,6 +5835,8 @@ void ui_event_Q2P9HGSMMBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q2P9HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5778,6 +5847,8 @@ void ui_event_Q2P18HGSMMButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q2P18HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5788,6 +5859,8 @@ void ui_event_Q2P18HGSMMBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q2P18HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5798,6 +5871,8 @@ void ui_event_Q3P9HGSMMButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q3P9HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5808,6 +5883,8 @@ void ui_event_Q3P9HGSMMBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q3P9HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5818,6 +5895,8 @@ void ui_event_Q3P18HGSMMButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q3P18HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5828,6 +5907,8 @@ void ui_event_Q3P18HGSMMBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q3P18HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5838,6 +5919,8 @@ void ui_event_Q4P9HGSMMButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q4P9HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5848,6 +5931,8 @@ void ui_event_Q4P9HGSMMBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q4P9HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5858,6 +5943,8 @@ void ui_event_Q4P18HGSMMButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q4P18HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5868,6 +5955,8 @@ void ui_event_Q4P18HGSMMBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
         _ui_screen_delete(&ui_Q4P18HGScreen);
+        DISABLE_SENSORS
+        PLAY_BACKBTN_SOUND
     }
 }
 
