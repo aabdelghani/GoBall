@@ -98,6 +98,9 @@ void reset_scores(void)
         players[i].score           = 0;
         players[i].current_hole    = 0;
         players[i].detection_count = 0;
+        players[i].par3_count      = QUOTA_9H_PAR3;
+        players[i].par4_count      = QUOTA_9H_PAR4;
+        players[i].par5_count      = QUOTA_9H_PAR5;
         final_scores[i]            = 0;
 
         // Reset score arrays

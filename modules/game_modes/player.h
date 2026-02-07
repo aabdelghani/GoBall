@@ -10,6 +10,9 @@ typedef struct Player {
     int holes_halved;
     signed char upAndDown; 
     int round_total_score;
+    int par3_count;
+    int par4_count;
+    int par5_count;
 } Player;
 
 

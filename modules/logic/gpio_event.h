@@ -16,6 +16,7 @@
 #include "../game_modes/game_modes.h"
 #include "../game_modes/player.h"
 #include "../game_modes/strokeplay.h"
+#include "../game_modes/quotaplay.h"
 #include "led_logic_event.h"
 /*********************
  *      DEFINES

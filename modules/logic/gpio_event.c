@@ -971,6 +971,48 @@ void check_all_players_completed(GameMode gameMode)
             }
             break;
 
+        case GAME_MODE_QUOTA:
+            DEBUG_INFO(MODULE_GAME,
+                       "Quota Points - checking completion for %d players", num_players);
+
+            for (uint8_t i = 0; i < num_players; i++)
+            {
+                if (quota_player_completed(&players[i]))
+                {
+                    player_is_finished[i] = 1;
+                    DEBUG_INFO(MODULE_GAME, "Player %d completed quota!", i + 1);
+                }
+                else
+                {
+                    player_is_finished[i] = 0;
+                    all_players_completed = 0;
+                    DEBUG_DEBUG(MODULE_GAME,
+                                "Player %d quota remaining (3pt:%d, 4pt:%d, 5pt:%d)",
+                                i + 1, players[i].par3_count, players[i].par4_count,
+                                players[i].par5_count);
+                }
+            }
+
+            update_flag = all_players_completed ? 1 : 0;
+
+            if (update_flag)
+            {
+                DEBUG_INFO(MODULE_GAME, "All players completed their quota!");
+                set_sensors_enabled(0);
+
+                switch (num_players)
+                {
+                    case 1:
+                        DEBUG_INFO(MODULE_GAME,
+                                   "1P Quota complete - Score:%d",
+                                   players[0].score);
+                        PLAY_PLAYER1WINS_WAV;
+                        DEBUG_INFO(MODULE_GAME, "Quota 1P complete - staying on game screen");
+                        break;
+                }
+            }
+            break;
+
         case GAME_MODE_MATCH_PLAY:
             DEBUG_INFO(MODULE_GAME,
                        "Match Play - checking completion for %d players on hole mode %d",
@@ -1609,9 +1651,20 @@ void print_final_scores_and_winner(void)
                 break;
 
             case GAME_MODE_QUOTA:
-                DEBUG_DEBUG(MODULE_GAME, "Quota mode winner determined - Player %d",
-                            winner_index + 1);
-                // TODO: Add switch(num_players) logic per game mode
+                DEBUG_DEBUG(MODULE_GAME, "Quota Points mode completed");
+                switch (num_players)
+                {
+                    case 1:
+                        DEBUG_INFO(MODULE_GAME,
+                                   "1P Quota complete - Score:%d (3pt:%d, 4pt:%d, 5pt:%d)",
+                                   players[0].score, players[0].par3_count,
+                                   players[0].par4_count, players[0].par5_count);
+                        // Navigate back to home screen for 1 player
+                        _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
+                                          &ui_HScreen_screen_init);
+                        DEBUG_INFO(MODULE_UI, "Navigating to home screen (Quota 1P complete)");
+                        break;
+                }
                 break;
 
             case GAME_MODE_VEGAS:
@@ -1847,9 +1900,11 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                 break;
 
                             case GAME_MODE_QUOTA:
-                                DEBUG_TRACE(MODULE_GAME,
-                                            "Quota mode - pin event (not yet implemented)");
-                                // Placeholder for Quota - will be implemented in quota.c
+                                quota_play_process_pin(player, current_player_index, pin_offset,
+                                                       &leds);
+                                player->round_total_score = player->score;
+                                DEBUG_DEBUG(MODULE_GAME, "Player %d round total score: %d",
+                                            current_player_index + 1, player->round_total_score);
                                 break;
 
                             case GAME_MODE_VEGAS:
@@ -1871,6 +1926,15 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                         logic_update_label_text(current_player_index, player->current_hole,
                                                 player->score, player->detection_count,
                                                 num_players);
+
+                        // Quota 1P: every detection is a complete turn
+                        if (current_game_mode == GAME_MODE_QUOTA && num_players == 1 &&
+                            player->detection_count == 1 && !update_flag)
+                        {
+                            player->detection_count = 0;
+                            DEBUG_INFO(MODULE_GAME, "Quota 1P - hole completed immediately");
+                            check_all_players_completed(current_game_mode);
+                        }
 
                         // Handle turn completion based on game mode
                         if (player->detection_count == SENSORS_PER_TURN && !update_flag)
@@ -2596,8 +2660,15 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                     break;
 
                                 case GAME_MODE_QUOTA:
-                                    DEBUG_TRACE(MODULE_GAME,
-                                                "Quota mode turn completion (not yet implemented)");
+                                    player->current_hole++;
+                                    player->detection_count = 0;
+                                    DEBUG_INFO(MODULE_GAME,
+                                               "Quota turn complete - Player %d, Hole %d",
+                                               current_player_index + 1,
+                                               player->current_hole);
+
+                                    // Check if all players are done with their shots
+                                    check_all_players_completed(current_game_mode);
                                     break;
 
                                 case GAME_MODE_VEGAS:
@@ -2830,6 +2901,51 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
 
         case GAME_MODE_QUOTA:
             DEBUG_TRACE(MODULE_LOGIC, "Quota mode");
+            switch (current_hole_mode)
+            {
+                case NINE_HOLES:
+                    switch (num_players)
+                    {
+                        case 1:
+                            DEBUG_TRACE(MODULE_LOGIC, "Quota 1P 9H");
+                            lv_label_set_text_fmt(ui_Q1P9HGSBCPText, "%d", detection_count);
+                            lv_label_set_text_fmt(ui_Q1P9HGSPSPar3PText, "%d",
+                                                  players[player_index].par3_count);
+                            lv_label_set_text_fmt(ui_Q1P9HGSPSPar4PText, "%d",
+                                                  players[player_index].par4_count);
+                            lv_label_set_text_fmt(ui_Q1P9HGSPSPar5PText, "%d",
+                                                  players[player_index].par5_count);
+                            DEBUG_INFO(MODULE_LOGIC,
+                                       "Quota 1P 9H updated - Balls:%d, 3pt:%d, 4pt:%d, 5pt:%d",
+                                       detection_count, players[player_index].par3_count,
+                                       players[player_index].par4_count,
+                                       players[player_index].par5_count);
+                            break;
+                    }
+                    break;
+                case EIGHTEEN_HOLES:
+                    switch (num_players)
+                    {
+                        case 1:
+                            DEBUG_TRACE(MODULE_LOGIC, "Quota 1P 18H");
+                            lv_label_set_text_fmt(ui_Q1P18HGSBCPText, "%d", detection_count);
+                            lv_label_set_text_fmt(ui_Q1P18HGSPSPar3PText, "%d",
+                                                  players[player_index].par3_count);
+                            lv_label_set_text_fmt(ui_Q1P18HGSPSPar4PText, "%d",
+                                                  players[player_index].par4_count);
+                            lv_label_set_text_fmt(ui_Q1P18HGSPSPar5PText, "%d",
+                                                  players[player_index].par5_count);
+                            DEBUG_INFO(MODULE_LOGIC,
+                                       "Quota 1P 18H updated - Balls:%d, 3pt:%d, 4pt:%d, 5pt:%d",
+                                       detection_count, players[player_index].par3_count,
+                                       players[player_index].par4_count,
+                                       players[player_index].par5_count);
+                            break;
+                    }
+                    break;
+            }
+            break;
+
         case GAME_MODE_VEGAS:
             DEBUG_TRACE(MODULE_LOGIC, "Vegas mode");
         case GAME_MODE_STROKE_PLAY:

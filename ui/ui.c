@@ -3237,7 +3237,8 @@ void ui_event_QPSS1PButton(lv_event_t * e)
         RESET_SCORES
         ENABLE_SENSORS
         SET_ONE_PLAYER
-       
+        SET_GAME_MODE_QUOTA
+        PLAY_ONEPLAYER_SOUND
     }
 }
 
@@ -3252,7 +3253,8 @@ void ui_event_QPSS1PBText(lv_event_t * e)
         RESET_SCORES
         ENABLE_SENSORS
         SET_ONE_PLAYER
-        SET_HOLES_9
+        SET_GAME_MODE_QUOTA
+        PLAY_ONEPLAYER_SOUND
     }
 }
 
@@ -4053,6 +4055,14 @@ void ui_event_Q1PHS9HButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_Q1P9HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Q1P9HGScreen_screen_init);
         _ui_screen_delete(&ui_Q1PHSScreen);
+        PLAY_NINEHOLES_SOUND
+        SET_HOLES_9
+        players[0].par3_count = QUOTA_9H_PAR3;
+        players[0].par4_count = QUOTA_9H_PAR4;
+        players[0].par5_count = QUOTA_9H_PAR5;
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
     }
 }
 
@@ -4063,6 +4073,14 @@ void ui_event_Q1PHS9HBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_Q1P9HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Q1P9HGScreen_screen_init);
         _ui_screen_delete(&ui_Q1PHSScreen);
+        PLAY_NINEHOLES_SOUND
+        SET_HOLES_9
+        players[0].par3_count = QUOTA_9H_PAR3;
+        players[0].par4_count = QUOTA_9H_PAR4;
+        players[0].par5_count = QUOTA_9H_PAR5;
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
     }
 }
 
@@ -4073,6 +4091,14 @@ void ui_event_Q1PHS18HButton(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_Q1P18HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Q1P18HGScreen_screen_init);
         _ui_screen_delete(&ui_Q1PHSScreen);
+        PLAY_EIGHTEENHOLES_SOUND
+        SET_HOLES_18
+        players[0].par3_count = QUOTA_18H_PAR3;
+        players[0].par4_count = QUOTA_18H_PAR4;
+        players[0].par5_count = QUOTA_18H_PAR5;
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
     }
 }
 
@@ -4083,6 +4109,14 @@ void ui_event_Q1PHS18HBText(lv_event_t * e)
     if(event_code == LV_EVENT_CLICKED) {
         _ui_screen_change(&ui_Q1P18HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_Q1P18HGScreen_screen_init);
         _ui_screen_delete(&ui_Q1PHSScreen);
+        PLAY_EIGHTEENHOLES_SOUND
+        SET_HOLES_18
+        players[0].par3_count = QUOTA_18H_PAR3;
+        players[0].par4_count = QUOTA_18H_PAR4;
+        players[0].par5_count = QUOTA_18H_PAR5;
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
     }
 }
 
