@@ -2953,8 +2953,8 @@ void ui_event_HSVQPButton(lv_event_t* e)
         _ui_screen_change(&ui_VQPSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQPSScreen_screen_init);
         _ui_screen_delete(&ui_HScreen);
-
-        PLAY_BACKBTN_SOUND
+        SET_GAME_MODE_VEGAS
+        PLAY_VEGASQUOTAPOINTS_SOUND
     }
 }
 
@@ -2967,8 +2967,8 @@ void ui_event_HSVQPBText(lv_event_t* e)
         _ui_screen_change(&ui_VQPSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQPSScreen_screen_init);
         _ui_screen_delete(&ui_HScreen);
-
-        PLAY_BACKBTN_SOUND
+        SET_GAME_MODE_VEGAS
+        PLAY_VEGASQUOTAPOINTS_SOUND
     }
 }
 
