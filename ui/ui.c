@@ -4863,6 +4863,7 @@ void ui_event_VQ1PHS9HButton(lv_event_t* e)
         lv_label_set_text_fmt(ui_VQ1P9HGSPSPar4PText, "%d", QUOTA_9H_PAR4);
         lv_label_set_text_fmt(ui_VQ1P9HGSPSPar5PText, "%d", QUOTA_9H_PAR5);
         lv_label_set_text_fmt(ui_VQ1P9HGSPSCText, "%d", 0);
+        lv_label_set_text(ui_VQ1P9HGSBCPText, "-");
         PRINT_CURRENT_GAME_MODE
         PRINT_CURRENT_HOLE_MODE
         play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
@@ -4888,6 +4889,7 @@ void ui_event_VQ1PHS9HBText(lv_event_t* e)
         lv_label_set_text_fmt(ui_VQ1P9HGSPSPar4PText, "%d", QUOTA_9H_PAR4);
         lv_label_set_text_fmt(ui_VQ1P9HGSPSPar5PText, "%d", QUOTA_9H_PAR5);
         lv_label_set_text_fmt(ui_VQ1P9HGSPSCText, "%d", 0);
+        lv_label_set_text(ui_VQ1P9HGSBCPText, "-");
         PRINT_CURRENT_GAME_MODE
         PRINT_CURRENT_HOLE_MODE
         play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);

@@ -3804,7 +3804,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                     {
                         case 1:
                             DEBUG_TRACE(MODULE_LOGIC, "Vegas Quota 1P 9H");
-                            lv_label_set_text_fmt(ui_VQ1P9HGSBCPText, "%d", detection_count);
+                            lv_label_set_text(ui_VQ1P9HGSBCPText, "-");
                             lv_label_set_text_fmt(ui_VQ1P9HGSPSPar3PText, "%d",
                                                   players[0].par3_count);
                             lv_label_set_text_fmt(ui_VQ1P9HGSPSPar4PText, "%d",
