@@ -16,6 +16,7 @@
 #define QUOTA_18H_PAR5  4
 
 void quota_play_process_pin(Player *player, int player_index, unsigned int gpio_pin, led_strip_controller_t *leds);
+void vegas_quota_play_process_pin(Player *player, int player_index, unsigned int gpio_pin, led_strip_controller_t *leds, Player *all_players, uint8_t num_players);
 int  quota_player_completed(Player *player);
 
 #endif // QUOTAPLAY_H

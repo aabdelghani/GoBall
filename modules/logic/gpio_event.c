@@ -1555,6 +1555,41 @@ void check_all_players_completed(GameMode gameMode)
             }
             break;
 
+        case GAME_MODE_VEGAS:
+            DEBUG_INFO(MODULE_GAME, "Vegas Quota - checking completion for %d players",
+                       num_players);
+
+            for (uint8_t i = 0; i < num_players; i++)
+            {
+                if (quota_player_completed(&players[i]))
+                {
+                    player_is_finished[i] = 1;
+                    DEBUG_INFO(MODULE_GAME, "Vegas Player %d completed quota!", i + 1);
+                }
+                else
+                {
+                    player_is_finished[i] = 0;
+                    DEBUG_DEBUG(MODULE_GAME, "Vegas Player %d quota remaining (3pt:%d, 4pt:%d, 5pt:%d)",
+                                i + 1, players[i].par3_count, players[i].par4_count,
+                                players[i].par5_count);
+                }
+            }
+
+            switch (num_players)
+            {
+                case 1:
+                    if (player_is_finished[0])
+                    {
+                        update_flag = 1;
+                        set_sensors_enabled(0);
+                        DEBUG_INFO(MODULE_GAME, "1P Vegas Quota complete - Score:%d",
+                                   players[0].score);
+                        PLAY_PLAYER1WINS_WAV;
+                    }
+                    break;
+            }
+            break;
+
         case GAME_MODE_MATCH_PLAY:
             DEBUG_INFO(MODULE_GAME,
                        "Match Play - checking completion for %d players on hole mode %d",
@@ -2463,9 +2498,12 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                 break;
 
                             case GAME_MODE_VEGAS:
-                                DEBUG_TRACE(MODULE_GAME,
-                                            "Vegas mode - pin event (not yet implemented)");
-                                // Placeholder for Vegas - will be implemented in vegas.c
+                                vegas_quota_play_process_pin(player, current_player_index,
+                                                             pin_offset, &leds, players,
+                                                             num_players);
+                                player->round_total_score = player->score;
+                                DEBUG_DEBUG(MODULE_GAME, "Player %d round total score: %d",
+                                            current_player_index + 1, player->round_total_score);
                                 break;
 
                             default:
@@ -2482,10 +2520,11 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                                 player->score, player->detection_count,
                                                 num_players);
 
-                        // Quota: check completion after every detection
+                        // Quota/Vegas: check completion after every detection
                         // If player reaches 0,0,0, game ends immediately regardless of remaining
                         // balls
-                        if (current_game_mode == GAME_MODE_QUOTA && !update_flag)
+                        if ((current_game_mode == GAME_MODE_QUOTA ||
+                             current_game_mode == GAME_MODE_VEGAS) && !update_flag)
                         {
                             if (quota_player_completed(player))
                             {
@@ -3343,8 +3382,14 @@ void logic_handle_events(struct gpiod_line_bulk* event_lines, struct gpiod_line_
                                     break;
 
                                 case GAME_MODE_VEGAS:
-                                    DEBUG_TRACE(MODULE_GAME,
-                                                "Vegas mode turn completion (not yet implemented)");
+                                    player->current_hole++;
+                                    player->detection_count = 0;
+                                    DEBUG_INFO(MODULE_GAME,
+                                               "Vegas Quota turn complete - Player %d, Hole %d",
+                                               current_player_index + 1, player->current_hole);
+
+                                    // Check if any player completed their quota
+                                    check_all_players_completed(current_game_mode);
                                     break;
                             }
 
@@ -3751,7 +3796,37 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
             break;
 
         case GAME_MODE_VEGAS:
-            DEBUG_TRACE(MODULE_LOGIC, "Vegas mode");
+            DEBUG_TRACE(MODULE_LOGIC, "Vegas Quota mode");
+            switch (current_hole_mode)
+            {
+                case NINE_HOLES:
+                    switch (num_players)
+                    {
+                        case 1:
+                            DEBUG_TRACE(MODULE_LOGIC, "Vegas Quota 1P 9H");
+                            lv_label_set_text_fmt(ui_VQ1P9HGSBCPText, "%d", detection_count);
+                            lv_label_set_text_fmt(ui_VQ1P9HGSPSPar3PText, "%d",
+                                                  players[0].par3_count);
+                            lv_label_set_text_fmt(ui_VQ1P9HGSPSPar4PText, "%d",
+                                                  players[0].par4_count);
+                            lv_label_set_text_fmt(ui_VQ1P9HGSPSPar5PText, "%d",
+                                                  players[0].par5_count);
+                            lv_label_set_text_fmt(ui_VQ1P9HGSPSCText, "%d",
+                                                  players[0].score);
+                            break;
+                    }
+                    break;
+                case EIGHTEEN_HOLES:
+                    switch (num_players)
+                    {
+                        case 1:
+                            DEBUG_TRACE(MODULE_LOGIC, "Vegas Quota 1P 18H - not yet implemented");
+                            break;
+                    }
+                    break;
+            }
+            break;
+
         case GAME_MODE_STROKE_PLAY:
             DEBUG_TRACE(MODULE_LOGIC, "Stroke Play mode");
             switch (current_hole_mode)

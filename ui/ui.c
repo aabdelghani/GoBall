@@ -3391,6 +3391,10 @@ void ui_event_VQPSS1PButton(lv_event_t* e)
         _ui_screen_change(&ui_VQ1PHSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQ1PHSScreen_screen_init);
         _ui_screen_delete(&ui_VQPSScreen);
+        RESET_SCORES
+        SET_ONE_PLAYER
+        SET_GAME_MODE_VEGAS
+        PLAY_ONEPLAYER_SOUND
     }
 }
 
@@ -3403,6 +3407,10 @@ void ui_event_VQPSS1PBText(lv_event_t* e)
         _ui_screen_change(&ui_VQ1PHSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQ1PHSScreen_screen_init);
         _ui_screen_delete(&ui_VQPSScreen);
+        RESET_SCORES
+        SET_ONE_PLAYER
+        SET_GAME_MODE_VEGAS
+        PLAY_ONEPLAYER_SOUND
     }
 }
 
@@ -4817,6 +4825,8 @@ void ui_event_VQ1PHSBButton(lv_event_t* e)
         _ui_screen_change(&ui_VQPSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQPSScreen_screen_init);
         _ui_screen_delete(&ui_VQ1PHSScreen);
+        RESET_SCORES
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -4829,6 +4839,8 @@ void ui_event_VQ1PHSBBText(lv_event_t* e)
         _ui_screen_change(&ui_VQPSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQPSScreen_screen_init);
         _ui_screen_delete(&ui_VQ1PHSScreen);
+        RESET_SCORES
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -4841,6 +4853,19 @@ void ui_event_VQ1PHS9HButton(lv_event_t* e)
         _ui_screen_change(&ui_VQ1P9HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQ1P9HGScreen_screen_init);
         _ui_screen_delete(&ui_VQ1PHSScreen);
+        ENABLE_SENSORS
+        PLAY_NINEHOLES_SOUND
+        SET_HOLES_9
+        players[0].par3_count = QUOTA_9H_PAR3;
+        players[0].par4_count = QUOTA_9H_PAR4;
+        players[0].par5_count = QUOTA_9H_PAR5;
+        lv_label_set_text_fmt(ui_VQ1P9HGSPSPar3PText, "%d", QUOTA_9H_PAR3);
+        lv_label_set_text_fmt(ui_VQ1P9HGSPSPar4PText, "%d", QUOTA_9H_PAR4);
+        lv_label_set_text_fmt(ui_VQ1P9HGSPSPar5PText, "%d", QUOTA_9H_PAR5);
+        lv_label_set_text_fmt(ui_VQ1P9HGSPSCText, "%d", 0);
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
     }
 }
 
@@ -4853,6 +4878,19 @@ void ui_event_VQ1PHS9HBText(lv_event_t* e)
         _ui_screen_change(&ui_VQ1P9HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQ1P9HGScreen_screen_init);
         _ui_screen_delete(&ui_VQ1PHSScreen);
+        ENABLE_SENSORS
+        PLAY_NINEHOLES_SOUND
+        SET_HOLES_9
+        players[0].par3_count = QUOTA_9H_PAR3;
+        players[0].par4_count = QUOTA_9H_PAR4;
+        players[0].par5_count = QUOTA_9H_PAR5;
+        lv_label_set_text_fmt(ui_VQ1P9HGSPSPar3PText, "%d", QUOTA_9H_PAR3);
+        lv_label_set_text_fmt(ui_VQ1P9HGSPSPar4PText, "%d", QUOTA_9H_PAR4);
+        lv_label_set_text_fmt(ui_VQ1P9HGSPSPar5PText, "%d", QUOTA_9H_PAR5);
+        lv_label_set_text_fmt(ui_VQ1P9HGSPSCText, "%d", 0);
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
     }
 }
 
@@ -6619,7 +6657,10 @@ void ui_event_VQ1P9HGSMMButton(lv_event_t* e)
     if (event_code == LV_EVENT_CLICKED)
     {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
-        _ui_screen_delete(&ui_Q1P9HGScreen);
+        _ui_screen_delete(&ui_VQ1P9HGScreen);
+        DISABLE_SENSORS
+        RESET_SCORES
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -6630,7 +6671,10 @@ void ui_event_VQ1P9HGSMMBText(lv_event_t* e)
     if (event_code == LV_EVENT_CLICKED)
     {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
-        _ui_screen_delete(&ui_Q1P9HGScreen);
+        _ui_screen_delete(&ui_VQ1P9HGScreen);
+        DISABLE_SENSORS
+        RESET_SCORES
+        PLAY_BACKBTN_SOUND
     }
 }
 
