@@ -8,13 +8,15 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 - **Stroke Play** - 1 to 4 players, 9 or 18 holes
 - **Match Play 1v1** - Head-to-head, 9 or 18 holes with early victory detection
 - **Match Play 2v2** - Team-based, 9 or 18 holes with early victory detection
-- **Quota Points** - 1 to 4 players (coming soon)
-- **Vegas Quota Points** - 1 to 4 players (coming soon)
+- **Quota Points** - 1 to 4 players, 9 or 18 holes with preset par targets counting down to zero
+- **Vegas Quota Points** - 1 to 4 players, 9 or 18 holes with bonus scoring after completing par categories
 
 ### Scoring
 - IR sensors detect ball entry into 4 scoring holes: 3 points, 4 points, 5 points, and 0 points
 - Automatic score tracking and cumulative scorecard display
 - Match Play uses "Up & Down" format (e.g., "3 & 2") with early victory when lead exceeds remaining holes
+- Quota Points: preset par targets (3pt, 4pt, 5pt) count down to zero — first to complete wins
+- Vegas Quota Points: same countdown, but bonus points earned when hitting a completed category while opponent hasn't
 
 ### Audio
 - Voice announcements for player turns, game mode selection, and winner declarations
@@ -30,8 +32,9 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 ### UI
 - Built with LVGL and SquareLine Studio
 - Automatic screen transitions to scorecard on game completion
-- Crown icon for Match Play leader
+- Crown icon for Match Play leader and Quota Points winner
 - Per-hole and cumulative score display
+- Player turn highlighting for all modes (2P cycles every 8, 3P every 12, 4P every 24 detections)
 
 ## Hardware
 
@@ -51,6 +54,7 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 │   ├── game_modes/             # Game logic
 │   │   ├── strokeplay.c/h      # Stroke play scoring
 │   │   ├── matchplay.c/h       # Match play scoring with early victory
+│   │   ├── quotaplay.c/h       # Quota and Vegas Quota scoring
 │   │   ├── game_modes.h        # Game mode enums
 │   │   └── player.h            # Player struct definition
 │   ├── game_sounds/            # WAV audio assets
@@ -137,6 +141,26 @@ python3 tools/gpio_loopback_simulator.py
 Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`, `DEBUG(4)`, `TRACE(5)`
 
 ## Changelog
+
+### 02/15/2026
+- Vegas Quota Points 3-player mode (9H and 18H) with highlighting, crown, turn announcements, ball counter, and bonus score display
+- Vegas Quota Points 3P winner logic: first to complete wins; simultaneous finish compares scores (highest wins, tie shows both crowns)
+- Vegas Quota Points 2-player mode (9H and 18H) with highlighting, crown, turn announcements, ball counter (2→1 cycle), and bonus score display
+- Vegas Quota Points 1-player 18H mode
+- Vegas Quota Points 1-player 9H mode with bonus scoring after completing par categories
+- Crowns hidden at game start for Vegas Quota 2P and 3P (shown only on winner)
+- Fix: Vegas Quota home screen button now plays correct sound instead of "going back"
+- Fix: Vegas Quota scoring only adds points after a category reaches 0 (not from start)
+- Fix: Multiple Vegas Quota main menu buttons were deleting wrong screens
+
+### 02/14/2026
+- Quota Points 4-player mode (9H and 18H) with highlighting, crown, and turn announcements
+- Quota Points 3-player mode (9H and 18H) with highlighting, crown, and turn announcements
+- Quota Points 2-player mode with winner logic, highlighting, and sensor control
+- Added score reset on quota back/main menu, initial P1 highlight and par label reset
+
+### 02/13/2026
+- Quota Points 1-player mode (9H and 18H) fully implemented with scoring and completion
 
 ### 02/03/2026
 - Match Play (1v1 & 2v2, 9/18 holes) now automatically navigates to scorecard on game end
