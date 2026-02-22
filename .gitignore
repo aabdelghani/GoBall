@@ -20,7 +20,6 @@ docker-output/
 # Third-party libraries (large, downloadable)
 # ============================================================================
 SDL2_mixer-2.8.1/
-lvgl/
 libgpiod-v1.6.x/
 rpi5-sysroot/
 .downloads/
