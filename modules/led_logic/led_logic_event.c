@@ -61,6 +61,8 @@ led_strip_controller_t init_led_controller(uint8_t default_gpio1, uint8_t defaul
     DEBUG_DEBUG(MODULE_LED, "WS2812 program initialized on both state machines");
 
     initialize_train_positions(controller.train_positions, NUM_TRAINS, PIXELS);
+
+    controller.enabled = true;
     DEBUG_INFO(MODULE_LED, "LED controller initialization completed successfully");
 
     return controller;
@@ -102,6 +104,10 @@ static uint32_t last_animation_time = 0;
 void set_all_leds(led_strip_controller_t* controller, uint32_t color)
 {
     DEBUG_TRACE(MODULE_LED, "set_all_leds called");
+    if (!controller->enabled)
+    {
+        return;
+    }
     DEBUG_INFO(MODULE_LED, "Setting all LEDs to color: 0x%08X", color);
 
     for (int i = 0; i < PIXELS; i++)
@@ -119,13 +125,17 @@ void update_led_animation(led_strip_controller_t* controller)
 {
     DEBUG_TRACE(MODULE_LED, "update_led_animation called");
 
+    if (!controller->enabled)
+    {
+        return;
+    }
+
     if (animation_paused)
     {
         DEBUG_TRACE(MODULE_LED, "Animation paused, skipping update");
         return;
     }
 
-    // Change this from DEBUG_DEBUG to DEBUG_TRACE
     DEBUG_TRACE(MODULE_LED, "Updating LED animation");
 
     update_led_strip(controller, controller->databuf1, controller->train_positions, NUM_TRAINS,
@@ -133,12 +143,23 @@ void update_led_animation(led_strip_controller_t* controller)
     update_led_strip(controller, controller->databuf2, controller->train_positions, NUM_TRAINS,
                      TRAIN_LENGTH, PIXELS);
 
+    uint32_t t_start = lv_tick_get();
+
     pio_sm_xfer_data(controller->pio, controller->sm1, PIO_DIR_TO_SM, sizeof(controller->databuf1),
                      controller->databuf1);
+
+    uint32_t elapsed_ms = lv_tick_elaps(t_start);
+    if (elapsed_ms > 500)
+    {
+        controller->enabled = false;
+        DEBUG_WARN(MODULE_LED, "LED DMA transfer timed out (%ums) - LEDs not connected, disabling LED output", elapsed_ms);
+        fprintf(stderr, "Warning: LED strips not connected, disabling LED output\n");
+        return;
+    }
+
     pio_sm_xfer_data(controller->pio, controller->sm2, PIO_DIR_TO_SM, sizeof(controller->databuf2),
                      controller->databuf2);
 
-    // Change individual train position logging to TRACE
     for (uint8_t t = 0; t < NUM_TRAINS; t++)
     {
         controller->train_positions[t] = (controller->train_positions[t] + 1) % PIXELS;
@@ -147,7 +168,6 @@ void update_led_animation(led_strip_controller_t* controller)
     }
 
     last_animation_time = lv_tick_get();
-    // Change completion message to TRACE
     DEBUG_TRACE(MODULE_LED, "LED animation update completed");
 }
 
@@ -200,9 +220,13 @@ void restore_animation(lv_timer_t* timer)
 void flash_toggle(lv_timer_t* timer)
 {
     DEBUG_TRACE(MODULE_LED, "flash_toggle called");
-    flash_context_t*        context     = (flash_context_t*)timer->user_data;
-    led_strip_controller_t* controller  = context->controller;
-    static bool             flash_state = false;
+    flash_context_t*        context    = (flash_context_t*)timer->user_data;
+    led_strip_controller_t* controller = context->controller;
+    if (!controller->enabled)
+    {
+        return;
+    }
+    static bool flash_state = false;
     uint8_t                 brightness  = controller->brightness;
 
     DEBUG_DEBUG(MODULE_LED, "Flash state: %s, brightness: %d", flash_state ? "ON" : "OFF",
@@ -254,6 +278,10 @@ void trigger_flash_with_color(led_strip_controller_t* controller, uint32_t durat
                               wbgr_color_t color)
 {
     DEBUG_TRACE(MODULE_LED, "trigger_flash_with_color called");
+    if (!controller->enabled)
+    {
+        return;
+    }
     DEBUG_INFO(MODULE_LED,
                "Triggering flash: duration=%dms, color=W:0x%02X B:0x%02X R:0x%02X G:0x%02X",
                duration_ms, color.w, color.b, color.r, color.g);

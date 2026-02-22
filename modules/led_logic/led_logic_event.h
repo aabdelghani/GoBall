@@ -25,6 +25,7 @@ typedef struct
     uint8_t databuf1[PIXELS * 4];
     uint8_t databuf2[PIXELS * 4];
     uint8_t brightness;
+    bool    enabled;
 } led_strip_controller_t;
 
 typedef struct
