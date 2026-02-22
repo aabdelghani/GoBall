@@ -111,10 +111,12 @@ int main(int argc, char **argv)
     if (!init_audio_system())
     {
         DEBUG_ERROR(MODULE_SOUND, "Audio system initialization failed!");
-        fprintf(stderr, "Failed to initialize audio!\n");
-        return EXIT_FAILURE;
+        fprintf(stderr, "Warning: Audio not available, continuing without sound\n");
     }
-    DEBUG_INFO(MODULE_SOUND, "Audio system initialized successfully");
+    else
+    {
+        DEBUG_INFO(MODULE_SOUND, "Audio system initialized successfully");
+    }
     print_audio_driver_info();
     print_current_working_dir();
 
