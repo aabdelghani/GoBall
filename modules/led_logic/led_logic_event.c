@@ -1,7 +1,10 @@
 #include "led_logic_event.h"
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 led_strip_controller_t leds;  // Now visible to all files including the header
 const wbgr_color_t     COLOR_RED   = {0x00, 0x00, 0x00, 0xFF};  // R
@@ -62,8 +65,58 @@ led_strip_controller_t init_led_controller(uint8_t default_gpio1, uint8_t defaul
 
     initialize_train_positions(controller.train_positions, NUM_TRAINS, PIXELS);
 
-    controller.enabled = true;
-    DEBUG_INFO(MODULE_LED, "LED controller initialization completed successfully");
+    // Probe whether LED strips are connected by attempting a DMA transfer
+    // in a child process. The kernel PIO DMA blocks forever in D state if
+    // LEDs aren't connected, so we can't do this in the main process.
+    DEBUG_INFO(MODULE_LED, "Probing LED strip connection...");
+    uint8_t probe_buf[PIXELS * 4];
+    memset(probe_buf, 0, sizeof(probe_buf));
+
+    pid_t pid = fork();
+    if (pid == 0)
+    {
+        // Child: attempt one DMA transfer, exit 0 on success
+        pio_sm_xfer_data(controller.pio, controller.sm1, PIO_DIR_TO_SM, sizeof(probe_buf), probe_buf);
+        _exit(0);
+    }
+    else if (pid > 0)
+    {
+        // Parent: wait up to 2 seconds for child
+        int   status  = 0;
+        bool  exited  = false;
+        for (int i = 0; i < 20; i++)
+        {
+            pid_t ret = waitpid(pid, &status, WNOHANG);
+            if (ret == pid)
+            {
+                exited = true;
+                break;
+            }
+            usleep(100000);  // 100ms
+        }
+
+        if (exited && WIFEXITED(status) && WEXITSTATUS(status) == 0)
+        {
+            controller.enabled = true;
+            DEBUG_INFO(MODULE_LED, "LED strips detected - LED output enabled");
+        }
+        else
+        {
+            kill(pid, SIGKILL);
+            waitpid(pid, NULL, 0);
+            controller.enabled = false;
+            DEBUG_WARN(MODULE_LED, "LED strips not connected - disabling LED output");
+            fprintf(stderr, "Warning: LED strips not connected, disabling LED output\n");
+        }
+    }
+    else
+    {
+        // Fork failed, disable LEDs to be safe
+        controller.enabled = false;
+        DEBUG_WARN(MODULE_LED, "Fork failed for LED probe - disabling LED output");
+    }
+
+    DEBUG_INFO(MODULE_LED, "LED controller initialization completed (enabled=%d)", controller.enabled);
 
     return controller;
 }
@@ -143,20 +196,8 @@ void update_led_animation(led_strip_controller_t* controller)
     update_led_strip(controller, controller->databuf2, controller->train_positions, NUM_TRAINS,
                      TRAIN_LENGTH, PIXELS);
 
-    uint32_t t_start = lv_tick_get();
-
     pio_sm_xfer_data(controller->pio, controller->sm1, PIO_DIR_TO_SM, sizeof(controller->databuf1),
                      controller->databuf1);
-
-    uint32_t elapsed_ms = lv_tick_elaps(t_start);
-    if (elapsed_ms > 500)
-    {
-        controller->enabled = false;
-        DEBUG_WARN(MODULE_LED, "LED DMA transfer timed out (%ums) - LEDs not connected, disabling LED output", elapsed_ms);
-        fprintf(stderr, "Warning: LED strips not connected, disabling LED output\n");
-        return;
-    }
-
     pio_sm_xfer_data(controller->pio, controller->sm2, PIO_DIR_TO_SM, sizeof(controller->databuf2),
                      controller->databuf2);
 
