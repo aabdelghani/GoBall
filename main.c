@@ -84,8 +84,8 @@ int main(int argc, char **argv)
 
     /*Initialize the display, and the input devices*/
     DEBUG_TRACE(MODULE_MAIN, "#3 Initializing HAL");
-    hal_init(2560, 720);
-    DEBUG_INFO(MODULE_MAIN, "HAL initialized with resolution 2560x720");
+    hal_init(3440, 1440);
+    DEBUG_INFO(MODULE_MAIN, "HAL initialized with resolution 3440x1440");
 
     DEBUG_TRACE(MODULE_UI, "#4 Initializing UI");
     ui_init();
