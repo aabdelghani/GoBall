@@ -11,7 +11,9 @@
 #include "../logic/gpio_event.h"
 
 // Define the base path to the sound files
+#ifndef SOUND_DIR
 #define SOUND_DIR "modules/game_sounds/"
+#endif
 
 // Use SOUND_DIR to define full paths
 #define SOUND_BACKBTN_WAV SOUND_DIR "backBtn.wav"

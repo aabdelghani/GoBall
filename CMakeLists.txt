@@ -94,11 +94,16 @@ FILE(GLOB_RECURSE LED_LOGIC_Sources CONFIGURE_DEPENDS modules/led_logic/*.c)
 FILE(GLOB_RECURSE GAME_MODE_Sources CONFIGURE_DEPENDS modules/game_modes/*.c)
 FILE(GLOB_RECURSE DEBUG_Sources CONFIGURE_DEPENDS modules/debug/*.c)  # Add debug sources
 
+# Sound directory path (configurable for Yocto vs development)
+if(SOUND_DIR_PATH)
+    add_compile_definitions(SOUND_DIR="${SOUND_DIR_PATH}")
+endif()
+
 # Create executable - ADD DEBUG SOURCES
-add_executable(${PROJECT_NAME} 
-    main.c 
-    ${LVGL_Sources} 
-    ${UI_Sources} 
+add_executable(${PROJECT_NAME}
+    main.c
+    ${LVGL_Sources}
+    ${UI_Sources}
     ${LOGIC_Sources}
     ${UI_LOGIC_Sources}
     ${SOUND_LOGIC_Sources}
