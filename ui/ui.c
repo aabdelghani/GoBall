@@ -3484,9 +3484,13 @@ void ui_event_VQPSS4PButton(lv_event_t* e)
 
     if (event_code == LV_EVENT_CLICKED)
     {
-        _ui_screen_change(&ui_Q4PHSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
-                          &ui_Q4PHSScreen_screen_init);
-        _ui_screen_delete(&ui_VQ4PHSScreen);
+        _ui_screen_change(&ui_VQ4PHSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
+                          &ui_VQ4PHSScreen_screen_init);
+        _ui_screen_delete(&ui_VQPSScreen);
+        RESET_SCORES
+        SET_FOUR_PLAYER
+        SET_GAME_MODE_VEGAS
+        PLAY_FOURPLAYERS_SOUND
     }
 }
 
@@ -3499,6 +3503,10 @@ void ui_event_VQPSS4PBText(lv_event_t* e)
         _ui_screen_change(&ui_VQ4PHSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQ4PHSScreen_screen_init);
         _ui_screen_delete(&ui_VQPSScreen);
+        RESET_SCORES
+        SET_FOUR_PLAYER
+        SET_GAME_MODE_VEGAS
+        PLAY_FOURPLAYERS_SOUND
     }
 }
 
@@ -5373,6 +5381,8 @@ void ui_event_VQ4PHSBButton(lv_event_t* e)
         _ui_screen_change(&ui_VQPSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQPSScreen_screen_init);
         _ui_screen_delete(&ui_VQ4PHSScreen);
+        RESET_SCORES
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5385,6 +5395,8 @@ void ui_event_VQ4PHSBBText(lv_event_t* e)
         _ui_screen_change(&ui_VQPSScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQPSScreen_screen_init);
         _ui_screen_delete(&ui_VQ4PHSScreen);
+        RESET_SCORES
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -5397,6 +5409,48 @@ void ui_event_VQ4PHS9HButton(lv_event_t* e)
         _ui_screen_change(&ui_VQ4P9HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQ4P9HGScreen_screen_init);
         _ui_screen_delete(&ui_VQ4PHSScreen);
+        ENABLE_SENSORS
+        PLAY_NINEHOLES_SOUND
+        SET_HOLES_9
+        players[0].par3_count = QUOTA_9H_PAR3;
+        players[0].par4_count = QUOTA_9H_PAR4;
+        players[0].par5_count = QUOTA_9H_PAR5;
+        players[1].par3_count = QUOTA_9H_PAR3;
+        players[1].par4_count = QUOTA_9H_PAR4;
+        players[1].par5_count = QUOTA_9H_PAR5;
+        players[2].par3_count = QUOTA_9H_PAR3;
+        players[2].par4_count = QUOTA_9H_PAR4;
+        players[2].par5_count = QUOTA_9H_PAR5;
+        players[3].par3_count = QUOTA_9H_PAR3;
+        players[3].par4_count = QUOTA_9H_PAR4;
+        players[3].par5_count = QUOTA_9H_PAR5;
+        lv_label_set_text_fmt(ui_VQ4P9HGSP1SPar3PText, "%d", QUOTA_9H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP1SPar4PText, "%d", QUOTA_9H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP1SPar5PText, "%d", QUOTA_9H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP2SPar3PText, "%d", QUOTA_9H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP2SPar4PText, "%d", QUOTA_9H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP2SPar5PText, "%d", QUOTA_9H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP3SPar3PText, "%d", QUOTA_9H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP3SPar4PText, "%d", QUOTA_9H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP3SPar5PText, "%d", QUOTA_9H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP4SPar3PText, "%d", QUOTA_9H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP4SPar4PText, "%d", QUOTA_9H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP4SPar5PText, "%d", QUOTA_9H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP1ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP2ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP3ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP4ScText, "%d", 0);
+        lv_label_set_text(ui_VQ4P9HGSBCPText, "2");
+        lv_obj_add_flag(ui_VQ4P9HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P9HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P9HGSP3SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P9HGSP4SCrown, LV_OBJ_FLAG_HIDDEN);
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
+        lv_obj_set_style_bg_color(ui_VQ4P9HGSP1SPar3Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(ui_VQ4P9HGSP1SPar4Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(ui_VQ4P9HGSP1SPar5Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 }
 
@@ -5409,6 +5463,48 @@ void ui_event_VQ4PHS9HBText(lv_event_t* e)
         _ui_screen_change(&ui_VQ4P9HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQ4P9HGScreen_screen_init);
         _ui_screen_delete(&ui_VQ4PHSScreen);
+        ENABLE_SENSORS
+        PLAY_NINEHOLES_SOUND
+        SET_HOLES_9
+        players[0].par3_count = QUOTA_9H_PAR3;
+        players[0].par4_count = QUOTA_9H_PAR4;
+        players[0].par5_count = QUOTA_9H_PAR5;
+        players[1].par3_count = QUOTA_9H_PAR3;
+        players[1].par4_count = QUOTA_9H_PAR4;
+        players[1].par5_count = QUOTA_9H_PAR5;
+        players[2].par3_count = QUOTA_9H_PAR3;
+        players[2].par4_count = QUOTA_9H_PAR4;
+        players[2].par5_count = QUOTA_9H_PAR5;
+        players[3].par3_count = QUOTA_9H_PAR3;
+        players[3].par4_count = QUOTA_9H_PAR4;
+        players[3].par5_count = QUOTA_9H_PAR5;
+        lv_label_set_text_fmt(ui_VQ4P9HGSP1SPar3PText, "%d", QUOTA_9H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP1SPar4PText, "%d", QUOTA_9H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP1SPar5PText, "%d", QUOTA_9H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP2SPar3PText, "%d", QUOTA_9H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP2SPar4PText, "%d", QUOTA_9H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP2SPar5PText, "%d", QUOTA_9H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP3SPar3PText, "%d", QUOTA_9H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP3SPar4PText, "%d", QUOTA_9H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP3SPar5PText, "%d", QUOTA_9H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP4SPar3PText, "%d", QUOTA_9H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP4SPar4PText, "%d", QUOTA_9H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP4SPar5PText, "%d", QUOTA_9H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP1ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP2ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP3ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P9HGSP4ScText, "%d", 0);
+        lv_label_set_text(ui_VQ4P9HGSBCPText, "2");
+        lv_obj_add_flag(ui_VQ4P9HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P9HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P9HGSP3SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P9HGSP4SCrown, LV_OBJ_FLAG_HIDDEN);
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
+        lv_obj_set_style_bg_color(ui_VQ4P9HGSP1SPar3Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(ui_VQ4P9HGSP1SPar4Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(ui_VQ4P9HGSP1SPar5Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 }
 
@@ -5421,6 +5517,48 @@ void ui_event_VQ4PHS18HButton(lv_event_t* e)
         _ui_screen_change(&ui_VQ4P18HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQ4P18HGScreen_screen_init);
         _ui_screen_delete(&ui_VQ4PHSScreen);
+        ENABLE_SENSORS
+        PLAY_EIGHTEENHOLES_SOUND
+        SET_HOLES_18
+        players[0].par3_count = QUOTA_18H_PAR3;
+        players[0].par4_count = QUOTA_18H_PAR4;
+        players[0].par5_count = QUOTA_18H_PAR5;
+        players[1].par3_count = QUOTA_18H_PAR3;
+        players[1].par4_count = QUOTA_18H_PAR4;
+        players[1].par5_count = QUOTA_18H_PAR5;
+        players[2].par3_count = QUOTA_18H_PAR3;
+        players[2].par4_count = QUOTA_18H_PAR4;
+        players[2].par5_count = QUOTA_18H_PAR5;
+        players[3].par3_count = QUOTA_18H_PAR3;
+        players[3].par4_count = QUOTA_18H_PAR4;
+        players[3].par5_count = QUOTA_18H_PAR5;
+        lv_label_set_text_fmt(ui_VQ4P18HGSP1SPar3PText, "%d", QUOTA_18H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP1SPar4PText, "%d", QUOTA_18H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP1SPar5PText, "%d", QUOTA_18H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP2SPar3PText, "%d", QUOTA_18H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP2SPar4PText, "%d", QUOTA_18H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP2SPar5PText, "%d", QUOTA_18H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP3SPar3PText, "%d", QUOTA_18H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP3SPar4PText, "%d", QUOTA_18H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP3SPar5PText, "%d", QUOTA_18H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP4SPar3PText, "%d", QUOTA_18H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP4SPar4PText, "%d", QUOTA_18H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP4SPar5PText, "%d", QUOTA_18H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP1ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP2ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP3ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP4ScText, "%d", 0);
+        lv_label_set_text(ui_VQ4P18HGSBCPText, "2");
+        lv_obj_add_flag(ui_VQ4P18HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P18HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P18HGSP3SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P18HGSP4SCrown, LV_OBJ_FLAG_HIDDEN);
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
+        lv_obj_set_style_bg_color(ui_VQ4P18HGSP1SPar3Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(ui_VQ4P18HGSP1SPar4Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(ui_VQ4P18HGSP1SPar5Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 }
 
@@ -5433,6 +5571,48 @@ void ui_event_VQ4PHS18HBText(lv_event_t* e)
         _ui_screen_change(&ui_VQ4P18HGScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0,
                           &ui_VQ4P18HGScreen_screen_init);
         _ui_screen_delete(&ui_VQ4PHSScreen);
+        ENABLE_SENSORS
+        PLAY_EIGHTEENHOLES_SOUND
+        SET_HOLES_18
+        players[0].par3_count = QUOTA_18H_PAR3;
+        players[0].par4_count = QUOTA_18H_PAR4;
+        players[0].par5_count = QUOTA_18H_PAR5;
+        players[1].par3_count = QUOTA_18H_PAR3;
+        players[1].par4_count = QUOTA_18H_PAR4;
+        players[1].par5_count = QUOTA_18H_PAR5;
+        players[2].par3_count = QUOTA_18H_PAR3;
+        players[2].par4_count = QUOTA_18H_PAR4;
+        players[2].par5_count = QUOTA_18H_PAR5;
+        players[3].par3_count = QUOTA_18H_PAR3;
+        players[3].par4_count = QUOTA_18H_PAR4;
+        players[3].par5_count = QUOTA_18H_PAR5;
+        lv_label_set_text_fmt(ui_VQ4P18HGSP1SPar3PText, "%d", QUOTA_18H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP1SPar4PText, "%d", QUOTA_18H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP1SPar5PText, "%d", QUOTA_18H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP2SPar3PText, "%d", QUOTA_18H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP2SPar4PText, "%d", QUOTA_18H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP2SPar5PText, "%d", QUOTA_18H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP3SPar3PText, "%d", QUOTA_18H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP3SPar4PText, "%d", QUOTA_18H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP3SPar5PText, "%d", QUOTA_18H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP4SPar3PText, "%d", QUOTA_18H_PAR3);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP4SPar4PText, "%d", QUOTA_18H_PAR4);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP4SPar5PText, "%d", QUOTA_18H_PAR5);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP1ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP2ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP3ScText, "%d", 0);
+        lv_label_set_text_fmt(ui_VQ4P18HGSP4ScText, "%d", 0);
+        lv_label_set_text(ui_VQ4P18HGSBCPText, "2");
+        lv_obj_add_flag(ui_VQ4P18HGSP1SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P18HGSP2SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P18HGSP3SCrown, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_VQ4P18HGSP4SCrown, LV_OBJ_FLAG_HIDDEN);
+        PRINT_CURRENT_GAME_MODE
+        PRINT_CURRENT_HOLE_MODE
+        play_sound_once(load_sound_effect(SOUND_PLAYERONE_WAV), SOUND_DELAY_PLAYER_ANNOUNCE_MS);
+        lv_obj_set_style_bg_color(ui_VQ4P18HGSP1SPar3Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(ui_VQ4P18HGSP1SPar4Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(ui_VQ4P18HGSP1SPar5Panel, lv_color_hex(COLOR_1), LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 }
 
@@ -7127,7 +7307,10 @@ void ui_event_VQ4P9HGSMMButton(lv_event_t* e)
     if (event_code == LV_EVENT_CLICKED)
     {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
-        _ui_screen_delete(&ui_Q4P9HGScreen);
+        _ui_screen_delete(&ui_VQ4P9HGScreen);
+        DISABLE_SENSORS
+        RESET_SCORES
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -7138,7 +7321,10 @@ void ui_event_VQ4P9HGSMMBText(lv_event_t* e)
     if (event_code == LV_EVENT_CLICKED)
     {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
-        _ui_screen_delete(&ui_Q4P9HGScreen);
+        _ui_screen_delete(&ui_VQ4P9HGScreen);
+        DISABLE_SENSORS
+        RESET_SCORES
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -7149,7 +7335,10 @@ void ui_event_VQ4P18HGSMMButton(lv_event_t* e)
     if (event_code == LV_EVENT_CLICKED)
     {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
-        _ui_screen_delete(&ui_Q4P9HGScreen);
+        _ui_screen_delete(&ui_VQ4P18HGScreen);
+        DISABLE_SENSORS
+        RESET_SCORES
+        PLAY_BACKBTN_SOUND
     }
 }
 
@@ -7160,7 +7349,10 @@ void ui_event_VQ4P18HGSMMBText(lv_event_t* e)
     if (event_code == LV_EVENT_CLICKED)
     {
         _ui_screen_change(&ui_HScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_HScreen_screen_init);
-        _ui_screen_delete(&ui_Q4P9HGScreen);
+        _ui_screen_delete(&ui_VQ4P18HGScreen);
+        DISABLE_SENSORS
+        RESET_SCORES
+        PLAY_BACKBTN_SOUND
     }
 }
 

@@ -143,12 +143,14 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 ## Changelog
 
 ### 02/15/2026
+- Vegas Quota Points 4-player mode (9H and 18H) with highlighting, crown, turn announcements, ball counter, and bonus score display
+- Vegas Quota Points 4P winner logic: first to complete wins; simultaneous finish compares scores (highest wins, tie shows crowns)
 - Vegas Quota Points 3-player mode (9H and 18H) with highlighting, crown, turn announcements, ball counter, and bonus score display
 - Vegas Quota Points 3P winner logic: first to complete wins; simultaneous finish compares scores (highest wins, tie shows both crowns)
 - Vegas Quota Points 2-player mode (9H and 18H) with highlighting, crown, turn announcements, ball counter (2→1 cycle), and bonus score display
 - Vegas Quota Points 1-player 18H mode
 - Vegas Quota Points 1-player 9H mode with bonus scoring after completing par categories
-- Crowns hidden at game start for Vegas Quota 2P and 3P (shown only on winner)
+- Crowns hidden at game start for Vegas Quota 2P, 3P, and 4P (shown only on winner)
 - Fix: Vegas Quota home screen button now plays correct sound instead of "going back"
 - Fix: Vegas Quota scoring only adds points after a category reaches 0 (not from start)
 - Fix: Multiple Vegas Quota main menu buttons were deleting wrong screens

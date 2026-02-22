@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
 
 # Cross-compilation toolchain configuration
-set(CMAKE_TOOLCHAIN_FILE toolchain-aarch64.cmake)
+if(NOT YOCTO_BUILD)
+    set(CMAKE_TOOLCHAIN_FILE toolchain-aarch64.cmake)
+endif()
 
 # Set C and C++ standards
 set(CMAKE_C_STANDARD 11)
@@ -55,14 +57,15 @@ endif()
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBGPIOD REQUIRED libgpiod)
 
-# SDL2 configuration - use the aarch64 compatible versions
-set(SDL_FOLDER sdl2-dev-rpi64)
-set(SDL_MIXER_FOLDER sdl2-dev-rpi64)
+# SDL2 configuration
+if(NOT YOCTO_BUILD)
+    set(SDL_FOLDER sdl2-dev-rpi64)
+    set(SDL_MIXER_FOLDER sdl2-dev-rpi64)
+endif()
 
 # Include directories - ADD DEBUG DIRECTORY
 include_directories(
     ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/${SDL_FOLDER}/include
     ${PROJECT_SOURCE_DIR}/lvgl
     ${PROJECT_SOURCE_DIR}/ui
     ${PROJECT_SOURCE_DIR}/modules/game_modes
@@ -74,6 +77,9 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/modules/debug  # Add debug include path
     ${LIBGPIOD_INCLUDE_DIRS}
 )
+if(NOT YOCTO_BUILD)
+    include_directories(${PROJECT_SOURCE_DIR}/${SDL_FOLDER}/include)
+endif()
 
 # Add piolib subdirectory
 add_subdirectory(utils/piolib)
@@ -102,10 +108,12 @@ add_executable(${PROJECT_NAME}
 )
 
 # Link directories and libraries
-target_link_directories(${PROJECT_NAME} PRIVATE
-    ${PROJECT_SOURCE_DIR}/${SDL_FOLDER}/lib
-    ${PROJECT_SOURCE_DIR}/rpi5-sysroot/usr/lib/aarch64-linux-gnu
-)
+if(NOT YOCTO_BUILD)
+    target_link_directories(${PROJECT_NAME} PRIVATE
+        ${PROJECT_SOURCE_DIR}/${SDL_FOLDER}/lib
+        ${PROJECT_SOURCE_DIR}/rpi5-sysroot/usr/lib/aarch64-linux-gnu
+    )
+endif()
 
 target_link_libraries(${PROJECT_NAME} 
     SDL2
