@@ -1,4 +1,5 @@
 #include "sound_logic_event.h"
+#include "../debug/debug.h"
 // Global variable to track mute state
 static int audio_muted = 0;
 

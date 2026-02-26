@@ -73,8 +73,12 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/modules/ui_logic
     ${PROJECT_SOURCE_DIR}/modules/sound_logic
     ${PROJECT_SOURCE_DIR}/modules/led_logic
+    ${PROJECT_SOURCE_DIR}/modules/event_bus
+    ${PROJECT_SOURCE_DIR}/modules/game_state
+    ${PROJECT_SOURCE_DIR}/modules/gpio_driver
+    ${PROJECT_SOURCE_DIR}/modules/game_controller
     ${PROJECT_SOURCE_DIR}/utils/piolib/include
-    ${PROJECT_SOURCE_DIR}/modules/debug  # Add debug include path
+    ${PROJECT_SOURCE_DIR}/modules/debug
     ${LIBGPIOD_INCLUDE_DIRS}
 )
 if(NOT YOCTO_BUILD)
@@ -92,7 +96,11 @@ FILE(GLOB_RECURSE UI_LOGIC_Sources CONFIGURE_DEPENDS modules/ui_logic/*.c)
 FILE(GLOB_RECURSE SOUND_LOGIC_Sources CONFIGURE_DEPENDS modules/sound_logic/*.c)
 FILE(GLOB_RECURSE LED_LOGIC_Sources CONFIGURE_DEPENDS modules/led_logic/*.c)
 FILE(GLOB_RECURSE GAME_MODE_Sources CONFIGURE_DEPENDS modules/game_modes/*.c)
-FILE(GLOB_RECURSE DEBUG_Sources CONFIGURE_DEPENDS modules/debug/*.c)  # Add debug sources
+FILE(GLOB_RECURSE EVENT_BUS_Sources CONFIGURE_DEPENDS modules/event_bus/*.c)
+FILE(GLOB_RECURSE GAME_STATE_Sources CONFIGURE_DEPENDS modules/game_state/*.c)
+FILE(GLOB_RECURSE GPIO_DRIVER_Sources CONFIGURE_DEPENDS modules/gpio_driver/*.c)
+FILE(GLOB_RECURSE GAME_CONTROLLER_Sources CONFIGURE_DEPENDS modules/game_controller/*.c)
+FILE(GLOB_RECURSE DEBUG_Sources CONFIGURE_DEPENDS modules/debug/*.c)
 
 # Sound directory path (configurable for Yocto vs development)
 if(SOUND_DIR_PATH)
@@ -109,7 +117,11 @@ add_executable(${PROJECT_NAME}
     ${SOUND_LOGIC_Sources}
     ${LED_LOGIC_Sources}
     ${GAME_MODE_Sources}
-    ${DEBUG_Sources}  # Include debug sources
+    ${EVENT_BUS_Sources}
+    ${GAME_STATE_Sources}
+    ${GPIO_DRIVER_Sources}
+    ${GAME_CONTROLLER_Sources}
+    ${DEBUG_Sources}
 )
 
 # Link directories and libraries

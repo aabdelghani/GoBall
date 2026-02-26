@@ -1,9 +1,8 @@
 #ifndef QUOTAPLAY_H
 #define QUOTAPLAY_H
 #include "game_modes.h"
-#include "../logic/gpio_event.h"
-#include "../led_logic/led_logic_event.h"
 #include "player.h"
+#include "../led_logic/led_logic_event.h"
 
 // Quota presets for 9 holes
 #define QUOTA_9H_PAR3  2

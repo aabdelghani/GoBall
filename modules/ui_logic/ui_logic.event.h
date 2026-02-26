@@ -7,28 +7,50 @@
 #include "../../ui/ui.h"
 #include "../game_modes/game_modes.h"
 #include "../game_modes/quotaplay.h"
-#include "../logic/gpio_event.h"
-#define MAX_PLAYERS 4
+#include "../game_state/game_state.h"
+#include "../event_bus/event_bus.h"
 
-// Declare shared variables
-extern uint8_t update_flag;
-extern uint8_t prev_scores[MAX_PLAYERS]
-                          [9];  // Previous cumulative scores for each hole for each player
-extern uint8_t individual_scores[MAX_PLAYERS]
-                                [10];      // Individual scores for each hole for each player
-extern uint8_t final_scores[MAX_PLAYERS];  // Final cumulative scores for each player
-extern uint8_t highliting_counter;         // Counter for highlighting players
-extern uint8_t sensors_enabled;            // Flag to enable/disable sensors
-// Declare new functions
+/* UI controller initialization - subscribes to game events */
+extern void ui_controller_init(void);
+
+/* State management (called from generated UI event handlers) */
 extern void        set_num_players(uint8_t new_num_players);
 extern void        reset_scores(void);
 extern void        set_game_mode(GameMode mode);
 extern const char* get_game_mode_name(void);
-extern void        print_current_game_mode(void);  // New function declaration
+extern void        print_current_game_mode(void);
 extern void update_scoreCard(uint8_t player_index, uint8_t cumulative_score, uint8_t current_hole);
 extern void set_sensors_enabled(uint8_t enable);
 extern void print_sensors_status(void);
-// Define the macro to extend functionality only inside ui.c
+
+/* Hole and match play mode setters */
+extern void set_hole_mode(HoleMode mode);
+extern void set_match_play_mode(MatchPlayMode mode);
+extern void print_current_hole_mode(void);
+
+/* Player highlighting */
+extern void two_player_highlight_pattern(GameMode game_mode, HoleMode hole_mode);
+extern void three_player_highlight_pattern(GameMode game_mode, HoleMode hole_mode);
+extern void four_player_highlight_pattern(GameMode game_mode, HoleMode hole_mode);
+extern void update_player_highlight(uint8_t detection_count, uint8_t current_hole, uint8_t nplayers);
+
+/* Game completion and scoring UI */
+extern void check_all_players_completed(GameMode gameMode);
+extern void print_final_scores_and_winner(void);
+extern void logic_update_label_text(int player_index, int current_hole, int score,
+                                    int detection_count, int nplayers);
+
+/*
+ * Game state access macros for generated UI code.
+ * These MUST come after game_state.h is included (struct definitions parsed first).
+ * ui.c references 'players' and 'COLOR_1' directly - these macros provide access
+ * to the centralized game state without modifying generated files.
+ */
+#define players (game_state_get()->players)
+#define COLOR_1 COLOR_HIGHLIGHT_1
+#define COLOR_2 COLOR_HIGHLIGHT_2
+
+/* UI macros for generated UI event handlers */
 #ifdef _GO_BALL_RASPBERY_PI_UI_H
 #define RESET_SCORES reset_scores();
 

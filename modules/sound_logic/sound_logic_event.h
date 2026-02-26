@@ -7,8 +7,7 @@
 #include <stdio.h>
 #include <unistd.h>  // For getcwd()
 
-#include "../../ui/ui.h"
-#include "../logic/gpio_event.h"
+#include "lvgl.h"
 
 // Define the base path to the sound files
 #ifndef SOUND_DIR
@@ -104,9 +103,7 @@ lv_timer_t* play_sound_once(Mix_Chunk* sound, uint32_t delay_ms);
 extern void play_sound_timer_cb(lv_timer_t* timer);
 extern void init_sound_timer();
 
-#ifdef _GO_BALL_RASPBERY_PI_UI_H
-
-// Update all macros to use the function instead of direct variable access
+// Sound playback macros - always available
 #define PLAY_BACKBTN_SOUND \
     if (!is_audio_muted()) play_sound_effect(load_sound_effect(SOUND_BACKBTN_WAV));
 
@@ -279,8 +276,5 @@ extern void init_sound_timer();
             if (sound) play_sound_once(sound, delay_ms);      \
         }                                                     \
     } while (0)
-
-#else
-#endif
 
 #endif  // SOUND_LOGIC_EVENT_H
