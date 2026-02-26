@@ -1,6 +1,5 @@
 /**
  * @file main
- *
  */
 
 /*********************
@@ -12,51 +11,19 @@
 
 #include "lvgl/lvgl.h"
 #include "modules/debug/debug.h"
+#include "modules/event_bus/event_bus.h"
+#include "modules/game_state/game_state.h"
+#include "modules/gpio_driver/gpio_driver.h"
+#include "modules/game_controller/game_controller.h"
 #include "modules/led_logic/led_logic_event.h"
-#include "modules/logic/gpio_event.h"
 #include "modules/sound_logic/sound_logic_event.h"
 #include "modules/ui_logic/ui_logic.event.h"
 #include "ui/ui.h"
-/*********************
- *      DEFINES
- *********************/
-
-/**********************
- *      TYPEDEFS
- **********************/
 
 /**********************
  *  STATIC PROTOTYPES
  **********************/
 static lv_display_t *hal_init(int32_t w, int32_t h);
-
-/**********************
- *  STATIC VARIABLES
- **********************/
-
-/**********************
- *      MACROS
- **********************/
-
-/**********************
- *   GLOBAL FUNCTIONS
- **********************/
-
-/*********************
- *      DEFINES
- *********************/
-
-/**********************
- *      TYPEDEFS
- **********************/
-
-/**********************
- *      VARIABLES
- **********************/
-
-/**********************
- *  STATIC PROTOTYPES
- **********************/
 
 /**********************
  *   GLOBAL FUNCTIONS
@@ -66,48 +33,64 @@ int main(int argc, char **argv)
 {
     DEBUG_INFO(MODULE_MAIN, "#0 Application starting");
 
-    /* Initialize debug system - auto-configures based on build type */
+    /* Initialize debug system */
     DEBUG_TRACE(MODULE_MAIN, "#1 Initializing debug system");
     debug_init();
 
     DEBUG_INFO(MODULE_MAIN, "SquareLine Project starting");
     DEBUG_DEBUG(MODULE_MAIN, "Build type: %s", debug_get_build_type());
 
-    /* Your existing initialization code */
-    DEBUG_TRACE(MODULE_LVGL, "#2 Initializing LVGL");
+    /* Initialize event bus (must be first - other modules subscribe to it) */
+    DEBUG_TRACE(MODULE_MAIN, "#2 Initializing event bus");
+    event_bus_init();
+    DEBUG_INFO(MODULE_MAIN, "Event bus initialized");
+
+    /* Initialize LVGL */
+    DEBUG_TRACE(MODULE_LVGL, "#3 Initializing LVGL");
     (void)argc; /*Unused*/
     (void)argv; /*Unused*/
-
-    /*Initialize LVGL*/
     lv_init();
     DEBUG_INFO(MODULE_LVGL, "LVGL initialized successfully");
 
-    /*Initialize the display, and the input devices*/
-    DEBUG_TRACE(MODULE_MAIN, "#3 Initializing HAL");
+    /* Initialize the display and input devices */
+    DEBUG_TRACE(MODULE_MAIN, "#4 Initializing HAL");
     hal_init(2560, 720);
     DEBUG_INFO(MODULE_MAIN, "HAL initialized with resolution 2560x720");
 
-    DEBUG_TRACE(MODULE_UI, "#4 Initializing UI");
+    /* Initialize UI */
+    DEBUG_TRACE(MODULE_UI, "#5 Initializing UI");
     ui_init();
     DEBUG_INFO(MODULE_UI, "UI initialized successfully");
 
-    /*My Custom Logic */
-    struct gpiod_line_bulk  event_lines;
-    struct gpiod_line_event event;
+    /* Reset game state to defaults */
+    DEBUG_TRACE(MODULE_MAIN, "#6 Initializing game state");
+    game_state_reset();
+    DEBUG_INFO(MODULE_MAIN, "Game state initialized");
 
-    /*********************
-     *      GAME INITIALIZATION
-     *********************/
-    DEBUG_TRACE(MODULE_LOGIC, "#5 Initializing game logic");
-    if (logic_initialize_game(NUM_PLAYERS) < 0)
+    /* Subscribe game controller to events */
+    DEBUG_TRACE(MODULE_MAIN, "#7 Initializing game controller");
+    game_controller_init();
+    DEBUG_INFO(MODULE_MAIN, "Game controller initialized");
+
+    /* Subscribe UI controller to events */
+    DEBUG_TRACE(MODULE_MAIN, "#8 Initializing UI controller");
+    ui_controller_init();
+    DEBUG_INFO(MODULE_MAIN, "UI controller initialized");
+
+    /* Initialize GPIO driver */
+    DEBUG_TRACE(MODULE_MAIN, "#9 Initializing GPIO driver");
+    if (gpio_driver_init() < 0)
     {
-        DEBUG_ERROR(MODULE_LOGIC, "! Game initialization failed!");
-        return EXIT_FAILURE;
+        DEBUG_ERROR(MODULE_MAIN, "GPIO driver initialization failed!");
+        fprintf(stderr, "Warning: GPIO not available, continuing without sensors\n");
     }
-    DEBUG_INFO(MODULE_LOGIC, "Game initialized with %d players", NUM_PLAYERS);
+    else
+    {
+        DEBUG_INFO(MODULE_MAIN, "GPIO driver initialized");
+    }
 
     /* Initialize Sound System */
-    DEBUG_TRACE(MODULE_SOUND, "#6 Initializing audio system");
+    DEBUG_TRACE(MODULE_SOUND, "#10 Initializing audio system");
     if (!init_audio_system())
     {
         DEBUG_ERROR(MODULE_SOUND, "Audio system initialization failed!");
@@ -121,47 +104,36 @@ int main(int argc, char **argv)
     print_current_working_dir();
 
     /* Initialize LED System */
-    DEBUG_TRACE(MODULE_LED, "#7 Initializing LED controller");
-    // Remove the local 'leds' declaration and keep only initialization:
-    leds = init_led_controller(3, 2, argc, argv);  // Uses the global variable
+    DEBUG_TRACE(MODULE_LED, "#11 Initializing LED controller");
+    leds = init_led_controller(3, 2, argc, argv);
     DEBUG_INFO(MODULE_LED, "LED controller initialized");
 
-    set_brightness(&leds, 50);  // Medium brightness 0 - 255 brightness
+    set_brightness(&leds, 50);
     DEBUG_INFO(MODULE_LED, "LED brightness set to 50");
 
-    DEBUG_INFO(MODULE_MAIN, "#8 Entering main loop");
+    DEBUG_INFO(MODULE_MAIN, "#12 Entering main loop");
 
-    // In your main code or event handler:
-    int loop_counter = 0;
+    /* Main loop */
     while (1)
     {
-        loop_counter++;
-
-        // Update animation
-        DEBUG_TRACE(MODULE_LED, "#%d.%d Updating LED animation", loop_counter, 1);
+        /* Update LED animation */
         update_led_animation(&leds);
 
-        // Wait for events on any of the lines (non-blocking call)
-        DEBUG_TRACE(MODULE_LOGIC, "#%d.%d Handling GPIO events", loop_counter, 2);
-        logic_handle_events(&event_lines, &event, num_players);
+        /* Poll GPIO sensors - publishes events on valid triggers */
+        gpio_driver_poll();
 
-        /* Periodically call the lv_task handler.
-         * It could be done in a timer interrupt or an OS task too.*/
-        DEBUG_TRACE(MODULE_LVGL, "#%d.%d Running LVGL timer handler", loop_counter, 3);
+        /* Run LVGL timer handler */
         lv_timer_handler();
 
         usleep(5 * 1000);
     }
 
-    DEBUG_INFO(MODULE_MAIN, "#9 Application shutdown started");
+    /* Shutdown */
+    DEBUG_INFO(MODULE_MAIN, "Application shutdown started");
 
-    DEBUG_TRACE(MODULE_LVGL, "#9.1 Deinitializing LVGL");
+    gpio_driver_cleanup(0);
     lv_deinit();
-    DEBUG_INFO(MODULE_LVGL, "LVGL deinitialized");
-
-    DEBUG_TRACE(MODULE_SOUND, "#9.2 Cleaning up audio system");
-    cleanup_audio_system();  // Cleanup audio system
-    DEBUG_INFO(MODULE_SOUND, "Audio system cleaned up");
+    cleanup_audio_system();
 
     DEBUG_INFO(MODULE_MAIN, "Application shutdown completed");
 
@@ -192,12 +164,6 @@ static lv_display_t *hal_init(int32_t w, int32_t h)
     lv_indev_set_display(mouse, disp);
     lv_display_set_default(disp);
     DEBUG_DEBUG(MODULE_HAL, "Mouse input device configured");
-
-    // LV_IMAGE_DECLARE(mouse_cursor_icon); /*Declare the image file.*/
-    // cursor_obj = lv_image_create(lv_screen_active()); /*Create an image object for the cursor */
-    // lv_image_set_src(cursor_obj, &mouse_cursor_icon);           /*Set the image source*/
-    // lv_indev_set_cursor(mouse, cursor_obj);             /*Connect the image  object to the
-    // driver*/
 
     DEBUG_TRACE(MODULE_HAL, "#hal.4 Creating mousewheel input device");
     lv_indev_t *mousewheel = lv_sdl_mousewheel_create();

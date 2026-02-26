@@ -3,6 +3,7 @@
 # ============================================================================
 build/
 build-cross/
+build-refactor/
 out/
 docker-output/
 

@@ -7,7 +7,8 @@ set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
 set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
 
 # Sysroot path - use absolute path
-set(SYSROOT_PATH /home/q/Projects/SquareLine_Project/rpi5-sysroot)
+get_filename_component(TOOLCHAIN_DIR "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
+set(SYSROOT_PATH "${TOOLCHAIN_DIR}/rpi5-sysroot")
 set(CMAKE_SYSROOT ${SYSROOT_PATH})
 
 # Find programs in host system, libraries and headers in sysroot
@@ -23,7 +24,7 @@ set(CMAKE_CXX_FLAGS "--sysroot=${CMAKE_SYSROOT}" CACHE STRING "C++ flags")
 
 # Set pkg-config to use sysroot
 set(ENV{PKG_CONFIG_DIR} "")
-set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/pkgconfig:${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
+set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/pkgconfig:${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/local/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
 set(ENV{PKG_CONFIG_SYSROOT_DIR} ${CMAKE_SYSROOT})
 
 message(STATUS "Cross-compiling for AArch64")
