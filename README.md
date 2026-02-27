@@ -9,14 +9,14 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 - **Match Play 1v1** - Head-to-head, 9 or 18 holes with early victory detection
 - **Match Play 2v2** - Team-based, 9 or 18 holes with early victory detection
 - **Quota Points** - 1 to 4 players, 9 or 18 holes with preset par targets counting down to zero
-- **Vegas Quota Points** - 1 to 4 players, 9 or 18 holes with bonus scoring after completing par categories
+- **Vegas Quota Points** - 1 to 4 players, 9 or 18 holes with bonus scoring after completing par categories; category locks when 2 players close it
 
 ### Scoring
 - IR sensors detect ball entry into 4 scoring holes: 3 points, 4 points, 5 points, and 0 points
 - Automatic score tracking and cumulative scorecard display
 - Match Play uses "Up & Down" format (e.g., "3 & 2") with early victory when lead exceeds remaining holes
 - Quota Points: preset par targets (3pt, 4pt, 5pt) count down to zero — first to complete wins
-- Vegas Quota Points: same countdown, but bonus points earned when hitting a completed category while opponent hasn't
+- Vegas Quota Points: same countdown, but bonus points earned when hitting a completed category; category dies (no more bonus) once 2 players close it
 
 ### Audio
 - Voice announcements for player turns, game mode selection, and winner declarations
@@ -141,6 +141,10 @@ python3 tools/gpio_loopback_simulator.py
 Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`, `DEBUG(4)`, `TRACE(5)`
 
 ## Changelog
+
+### 02/27/2026
+- Vegas Quota Points: category locks when 2 players close it (3P/4P) — no more bonus scoring on dead categories
+- Fix: Quota Points and Vegas Quota Points main menu button now plays "main menu" sound instead of "going back"
 
 ### 02/15/2026
 - Vegas Quota Points 4-player mode (9H and 18H) with highlighting, crown, turn announcements, ball counter, and bonus score display

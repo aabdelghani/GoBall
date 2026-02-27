@@ -6918,7 +6918,7 @@ void ui_event_Q1P9HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_Q1P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -6932,7 +6932,7 @@ void ui_event_Q1P9HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_Q1P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -6946,7 +6946,7 @@ void ui_event_Q1P18HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_Q1P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -6960,7 +6960,7 @@ void ui_event_Q1P18HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_Q1P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -6974,7 +6974,7 @@ void ui_event_Q2P9HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_Q2P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -6988,7 +6988,7 @@ void ui_event_Q2P9HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_Q2P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7002,7 +7002,7 @@ void ui_event_Q2P18HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_Q2P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7016,7 +7016,7 @@ void ui_event_Q2P18HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_Q2P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7030,7 +7030,7 @@ void ui_event_Q3P9HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_Q3P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7044,7 +7044,7 @@ void ui_event_Q3P9HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_Q3P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7058,7 +7058,7 @@ void ui_event_Q3P18HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_Q3P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7072,7 +7072,7 @@ void ui_event_Q3P18HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_Q3P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7086,7 +7086,7 @@ void ui_event_Q4P9HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_Q4P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7100,7 +7100,7 @@ void ui_event_Q4P9HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_Q4P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7114,7 +7114,7 @@ void ui_event_Q4P18HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_Q4P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7128,7 +7128,7 @@ void ui_event_Q4P18HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_Q4P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7142,7 +7142,7 @@ void ui_event_VQ1P9HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_VQ1P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7156,7 +7156,7 @@ void ui_event_VQ1P9HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_VQ1P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7170,7 +7170,7 @@ void ui_event_VQ1P18HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_VQ1P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7184,7 +7184,7 @@ void ui_event_VQ1P18HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_VQ1P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7198,7 +7198,7 @@ void ui_event_VQ2P9HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_VQ2P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7212,7 +7212,7 @@ void ui_event_VQ2P9HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_VQ2P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7226,7 +7226,7 @@ void ui_event_VQ2P18HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_VQ2P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7240,7 +7240,7 @@ void ui_event_VQ2P18HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_VQ2P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7254,7 +7254,7 @@ void ui_event_VQ3P9HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_VQ3P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7268,7 +7268,7 @@ void ui_event_VQ3P9HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_VQ3P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7282,7 +7282,7 @@ void ui_event_VQ3P18HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_VQ3P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7296,7 +7296,7 @@ void ui_event_VQ3P18HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_VQ3P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7310,7 +7310,7 @@ void ui_event_VQ4P9HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_VQ4P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7324,7 +7324,7 @@ void ui_event_VQ4P9HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_VQ4P9HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7338,7 +7338,7 @@ void ui_event_VQ4P18HGSMMButton(lv_event_t* e)
         _ui_screen_delete(&ui_VQ4P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 
@@ -7352,7 +7352,7 @@ void ui_event_VQ4P18HGSMMBText(lv_event_t* e)
         _ui_screen_delete(&ui_VQ4P18HGScreen);
         DISABLE_SENSORS
         RESET_SCORES
-        PLAY_BACKBTN_SOUND
+        PLAY_MAINMENU_SOUND
     }
 }
 

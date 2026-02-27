@@ -79,16 +79,20 @@ void vegas_quota_play_process_pin(Player* player, int player_index, unsigned int
                player_index + 1, player->par3_count, player->par4_count, player->par5_count,
                player->score);
 
-    // Check if any opponent still has count > 0 in a given category
-    // For 1P, this is always false (no opponents)
-    int opponent_has_par3 = 0, opponent_has_par4 = 0, opponent_has_par5 = 0;
+    // Count how many players have closed each category (quota == 0)
+    // A category is "dead" (no bonus scoring) once 2+ players have closed it
+    int closed_par3 = 0, closed_par4 = 0, closed_par5 = 0;
     for (uint8_t i = 0; i < num_players; i++)
     {
-        if (i == player_index) continue;
-        if (all_players[i].par3_count > 0) opponent_has_par3 = 1;
-        if (all_players[i].par4_count > 0) opponent_has_par4 = 1;
-        if (all_players[i].par5_count > 0) opponent_has_par5 = 1;
+        if (all_players[i].par3_count == 0) closed_par3++;
+        if (all_players[i].par4_count == 0) closed_par4++;
+        if (all_players[i].par5_count == 0) closed_par5++;
     }
+    // For 1P: category is never dead (only 1 player can close it)
+    // For 2P+: dead once 2 players close it
+    int par3_alive = (num_players == 1) || (closed_par3 < 2);
+    int par4_alive = (num_players == 1) || (closed_par4 < 2);
+    int par5_alive = (num_players == 1) || (closed_par5 < 2);
 
     switch (gpio_pin)
     {
@@ -103,11 +107,16 @@ void vegas_quota_play_process_pin(Player* player, int player_index, unsigned int
             {
                 // Category already at 0 — earn bonus points
                 // For multiplayer: only if opponent still has this category > 0
-                if (num_players == 1 || opponent_has_par3)
+                if (par3_alive)
                 {
                     player->score += SCORE_THREE_POINTS;
                     DEBUG_INFO(MODULE_GAME, "Vegas bonus! Player %d earns +3, score now %d",
                                player_index + 1, player->score);
+                }
+                else
+                {
+                    DEBUG_INFO(MODULE_GAME, "Vegas 3pt category dead (%d players closed) - no bonus",
+                               closed_par3);
                 }
             }
             if (leds) trigger_flash_with_color(leds, 1000, COLOR_GREEN);
@@ -123,11 +132,16 @@ void vegas_quota_play_process_pin(Player* player, int player_index, unsigned int
             }
             else
             {
-                if (num_players == 1 || opponent_has_par4)
+                if (par4_alive)
                 {
                     player->score += SCORE_FOUR_POINTS;
                     DEBUG_INFO(MODULE_GAME, "Vegas bonus! Player %d earns +4, score now %d",
                                player_index + 1, player->score);
+                }
+                else
+                {
+                    DEBUG_INFO(MODULE_GAME, "Vegas 4pt category dead (%d players closed) - no bonus",
+                               closed_par4);
                 }
             }
             if (leds) trigger_flash_with_color(leds, 1000, COLOR_GREEN);
@@ -143,11 +157,16 @@ void vegas_quota_play_process_pin(Player* player, int player_index, unsigned int
             }
             else
             {
-                if (num_players == 1 || opponent_has_par5)
+                if (par5_alive)
                 {
                     player->score += SCORE_FIVE_POINTS;
                     DEBUG_INFO(MODULE_GAME, "Vegas bonus! Player %d earns +5, score now %d",
                                player_index + 1, player->score);
+                }
+                else
+                {
+                    DEBUG_INFO(MODULE_GAME, "Vegas 5pt category dead (%d players closed) - no bonus",
+                               closed_par5);
                 }
             }
             if (leds) trigger_flash_with_color(leds, 1000, COLOR_GREEN);
