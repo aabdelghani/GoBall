@@ -82,13 +82,39 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 
 ### Prerequisites
 
-- **Host**: Linux with `gcc`, `cmake`, `make`
-- **Cross-compiler**: ARM GNU Toolchain (`aarch64-none-linux-gnu-gcc`)
-  - [ARM GNU Toolchain 12.3](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) for RPi OS 12 (Bookworm)
-  - [ARM GNU Toolchain 10.2](https://developer.arm.com/downloads/-/gnu-a) for RPi OS 11 (Bullseye)
-- **Target RPi packages**: `libsdl2-2.0-0`, `libsdl2-mixer-2.0-0`
+- **Host**: Linux with `cmake` (>= 3.15), `make`, `pkg-config`
+- **Cross-compiler**: `aarch64-linux-gnu-gcc` (from `gcc-aarch64-linux-gnu` package)
+- **Sysroot**: A copy of the RPi5 filesystem at `rpi5-sysroot/` in the project root, containing at minimum:
+  - `usr/include/` — kernel headers, gpiod.h, SDL2 headers
+  - `usr/lib/` — libgpiod, libSDL2, libSDL2_mixer shared libraries and pkg-config files
+- **Target RPi packages** (installed on the Pi): `libsdl2-2.0-0`, `libsdl2-mixer-2.0-0`, `libgpiod2`
 
-### Command-Line Build
+### CMake Build
+
+```bash
+# Configure (uses toolchain-aarch64.cmake, auto-finds rpi5-sysroot/ in project root)
+cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+# Build
+make -C build -j$(nproc)
+
+# Custom sysroot location (if not in project root)
+cmake -B build -DSYSROOT_PATH=/path/to/rpi5-sysroot
+```
+
+#### Build Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `CMAKE_BUILD_TYPE` | `Debug` | `Debug` (level 4), `Release` (level 2) |
+| `ENABLE_DEBUG_TRACE` | `OFF` | Enable TRACE-level logging (level 5) |
+| `ENABLE_DEBUG_COLORS` | `ON` | Colored terminal output |
+| `ENABLE_DEBUG_TIMESTAMP` | `ON` | Timestamps in log output |
+| `SYSROOT_PATH` | `rpi5-sysroot/` | Override sysroot location |
+| `SOUND_DIR_PATH` | — | Override sound file directory (for Yocto) |
+| `YOCTO_BUILD` | — | Skip local toolchain/SDL paths for Yocto |
+
+### Script Build
 
 ```bash
 # Native cross-compile
@@ -102,15 +128,14 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 
 1. Open the project folder in VSCode
 2. Install C/C++ Extension Pack and CMake Tools
-3. Select the aarch64 toolchain from the bottom toolbar
-4. Click Build
+3. Run **CMake: Configure** (Ctrl+Shift+P) — generates `compile_commands.json` for IntelliSense
+4. Select the aarch64 toolchain from the bottom toolbar
+5. Click Build
 
 ### Deploy to Raspberry Pi
 
 ```bash
-scp build-cross/build/SquareLine_Project pi@<rpi-ip>:~
-# Or use docker output:
-scp docker-output/SquareLine_Project pi@<rpi-ip>:~
+scp build/SquareLine_Project q@<rpi-ip>:~/Desktop/SquareLine_Project/
 ```
 
 ### GPIO Test Simulator
@@ -145,6 +170,9 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 ### 02/27/2026
 - Vegas Quota Points: category locks when 2 players close it (3P/4P) — no more bonus scoring on dead categories
 - Fix: Quota Points and Vegas Quota Points main menu button now plays "main menu" sound instead of "going back"
+- Fix: Toolchain sysroot now auto-resolves to project-local `rpi5-sysroot/` (no more hardcoded path)
+- CMake accepts `-DSYSROOT_PATH=...` to override sysroot location
+- Updated README build instructions with CMake options and `compile_commands.json` for IntelliSense
 
 ### 02/15/2026
 - Vegas Quota Points 4-player mode (9H and 18H) with highlighting, crown, turn announcements, ball counter, and bonus score display

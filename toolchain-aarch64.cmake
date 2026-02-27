@@ -6,8 +6,10 @@ set(CMAKE_SYSTEM_PROCESSOR aarch64)
 set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
 set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
 
-# Sysroot path - use absolute path
-set(SYSROOT_PATH /home/q/Projects/SquareLine_Project/rpi5-sysroot)
+# Sysroot path - default to rpi5-sysroot/ next to this file, override with -DSYSROOT_PATH=...
+if(NOT SYSROOT_PATH)
+    set(SYSROOT_PATH "${CMAKE_CURRENT_LIST_DIR}/rpi5-sysroot")
+endif()
 set(CMAKE_SYSROOT ${SYSROOT_PATH})
 
 # Find programs in host system, libraries and headers in sysroot
