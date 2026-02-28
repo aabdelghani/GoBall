@@ -36,6 +36,12 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 - Auto-detects video duration via ffprobe
 - Child process auto-terminates when parent app exits (PR_SET_PDEATHSIG)
 
+### Player Names
+- Tap any player name label to edit via on-screen keyboard
+- Custom names persist across all game screens and scorecards for the session
+- Names reset to defaults ("Player 1"–"Player 4") when returning to main menu
+- Dynamic turn display labels also use custom names
+
 ### UI
 - Built with LVGL and SquareLine Studio
 - Automatic screen transitions to scorecard on game completion
@@ -68,6 +74,7 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 │   ├── game_videos/            # Video playback via ffplay subprocess
 │   ├── led_logic/              # WS2812 LED strip control
 │   ├── logic/                  # GPIO event handling, debounce, game flow
+│   ├── player_name/            # Editable player names with on-screen keyboard
 │   ├── sound_logic/            # SDL2_mixer audio system
 │   └── ui_logic/               # UI event handlers
 ├── ui/                         # LVGL UI (exported from SquareLine Studio)
@@ -81,7 +88,9 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 │   ├── autostart/              # Desktop files for kiosk mode
 │   └── test/                   # Test utilities and sound tests
 ├── tools/
-│   └── gpio_loopback_simulator.py  # GPIO test simulator
+│   ├── goball_dashboard.py         # 5-tab development dashboard (deploy, GPIO, test, logs, config)
+│   ├── gpio_loopback_simulator.py  # GPIO test simulator
+│   └── install_requirements.sh     # Install dashboard dependencies
 ├── scripts/                    # Build and dependency scripts
 └── Dockerfile                  # Docker cross-compilation environment
 ```
@@ -154,6 +163,25 @@ For testing without physical IR sensors, use the loopback simulator on the Pi it
 python3 tools/gpio_loopback_simulator.py
 ```
 
+### Development Dashboard
+
+A 5-tab tkinter GUI for managing the full dev workflow from the host machine:
+
+```bash
+# Install dependencies (tkinter, SSH tools)
+./tools/install_requirements.sh
+
+# Launch dashboard
+python3 tools/goball_dashboard.py
+```
+
+**Tabs:**
+1. **Deploy & Run** — Build, SCP deploy, start/stop/kill/restart app on Pi, configurable Pi IP/user/display
+2. **GPIO Simulator** — Trigger IR sensors remotely via SSH + gpiod
+3. **Test Harness** — Automated game scenarios (P1-P4 wins, full rounds, custom sequences)
+4. **Log Analyzer** — Live tail of app logs with module/level filtering and color-coded output
+5. **Config Editor** — Edit sound delays, debug levels, view source files
+
 ## Configuration
 
 ### Sound Timing (modules/sound_logic/sound_logic_event.h)
@@ -176,6 +204,19 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 ## Changelog
 
 ### 02/28/2026
+- **Development Dashboard** (`tools/goball_dashboard.py`): 5-tab tkinter GUI — deploy & run, GPIO simulator, test harness, log analyzer, config editor
+  - File browser for binary and extra modules to deploy
+  - Configurable Pi IP, username, SSH key, deploy path, and Wayland display
+  - Start/Stop/Kill/Restart/Reboot remote app controls
+  - P1-P4 wins test scenarios with realistic scoring patterns
+  - Live log tail with ANSI color stripping, module/level filtering
+  - Fix: SSH timeout on app start resolved with `nohup setsid ... disown`
+  - Fix: `pkill -f` instead of `pkill -x` for process names >15 chars
+  - Fix: Thread-safe tkinter updates from background SSH threads
+- **Player Name Editing**: tap any player name label to rename via on-screen keyboard overlay
+  - Custom names update across all game screens, scorecards, and turn displays
+  - Names reset to defaults on return to main menu
+  - Montserrat 32 font with icon glyph support for keyboard
 - Video playback on Tips > Visualize screen using external ffplay subprocess overlaid on the LVGL panel
 - Seek slider for video scrubbing with auto-detected duration via ffprobe
 - Pause/resume via SIGSTOP/SIGCONT signals to ffplay process
