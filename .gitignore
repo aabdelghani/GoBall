@@ -56,3 +56,7 @@ Dockerfile
 *.log
 tmp/
 notes.txt
+*.pdf
+*.xlsx
+*.xls
+*.docx
