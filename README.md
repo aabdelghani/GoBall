@@ -29,6 +29,13 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 - Color-coded flash on scoring (green for points, white for zero)
 - Player turn highlighting patterns
 
+### Video Playback
+- Tips > Visualize screen plays instructional video via external ffplay subprocess
+- Video overlaid on LVGL panel with always-on-top via labwc window rules
+- Seek slider and pause/resume controls rendered in LVGL below the video
+- Auto-detects video duration via ffprobe
+- Child process auto-terminates when parent app exits (PR_SET_PDEATHSIG)
+
 ### UI
 - Built with LVGL and SquareLine Studio
 - Automatic screen transitions to scorecard on game completion
@@ -58,6 +65,7 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 │   │   ├── game_modes.h        # Game mode enums
 │   │   └── player.h            # Player struct definition
 │   ├── game_sounds/            # WAV audio assets
+│   ├── game_videos/            # Video playback via ffplay subprocess
 │   ├── led_logic/              # WS2812 LED strip control
 │   ├── logic/                  # GPIO event handling, debounce, game flow
 │   ├── sound_logic/            # SDL2_mixer audio system
@@ -166,6 +174,14 @@ python3 tools/gpio_loopback_simulator.py
 Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`, `DEBUG(4)`, `TRACE(5)`
 
 ## Changelog
+
+### 02/28/2026
+- Video playback on Tips > Visualize screen using external ffplay subprocess overlaid on the LVGL panel
+- Seek slider for video scrubbing with auto-detected duration via ffprobe
+- Pause/resume via SIGSTOP/SIGCONT signals to ffplay process
+- Always-on-top video window via labwc window rule (`~/.config/labwc/rc.xml`)
+- Auto-cleanup: ffplay child process killed on parent exit via `prctl(PR_SET_PDEATHSIG)`
+- Back button stops video and navigates without re-triggering during screen fade-out animation
 
 ### 02/27/2026
 - Vegas Quota Points: category locks when 2 players close it (3P/4P) — no more bonus scoring on dead categories
