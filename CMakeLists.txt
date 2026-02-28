@@ -94,6 +94,7 @@ FILE(GLOB_RECURSE LED_LOGIC_Sources CONFIGURE_DEPENDS modules/led_logic/*.c)
 FILE(GLOB_RECURSE GAME_MODE_Sources CONFIGURE_DEPENDS modules/game_modes/*.c)
 FILE(GLOB_RECURSE DEBUG_Sources CONFIGURE_DEPENDS modules/debug/*.c)  # Add debug sources
 FILE(GLOB_RECURSE GAME_VIDEOS_Sources CONFIGURE_DEPENDS modules/game_videos/*.c)
+FILE(GLOB_RECURSE PLAYER_NAME_Sources CONFIGURE_DEPENDS modules/player_name/*.c)
 
 # Sound directory path (configurable for Yocto vs development)
 if(SOUND_DIR_PATH)
@@ -112,6 +113,7 @@ add_executable(${PROJECT_NAME}
     ${GAME_MODE_Sources}
     ${DEBUG_Sources}  # Include debug sources
     ${GAME_VIDEOS_Sources}
+    ${PLAYER_NAME_Sources}
 )
 
 # Link directories and libraries

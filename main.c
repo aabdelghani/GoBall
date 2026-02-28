@@ -16,6 +16,7 @@
 #include "modules/logic/gpio_event.h"
 #include "modules/sound_logic/sound_logic_event.h"
 #include "modules/ui_logic/ui_logic.event.h"
+#include "modules/player_name/player_name.h"
 #include "ui/ui.h"
 /*********************
  *      DEFINES
@@ -90,6 +91,8 @@ int main(int argc, char **argv)
     DEBUG_TRACE(MODULE_UI, "#4 Initializing UI");
     ui_init();
     DEBUG_INFO(MODULE_UI, "UI initialized successfully");
+
+    player_name_init();
 
     /*My Custom Logic */
     struct gpiod_line_bulk  event_lines;
