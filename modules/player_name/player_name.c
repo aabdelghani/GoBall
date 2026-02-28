@@ -308,12 +308,13 @@ static void show_keyboard(int player_idx)
 
     /* Keyboard */
     kb_keyboard = lv_keyboard_create(kb_overlay);
-    lv_obj_set_size(kb_keyboard, LV_PCT(100), 350);
+    lv_obj_set_size(kb_keyboard, LV_PCT(100), 450);
     lv_obj_align(kb_keyboard, LV_ALIGN_BOTTOM_MID, 0, 0);
     lv_keyboard_set_textarea(kb_keyboard, kb_textarea);
     lv_obj_set_style_bg_color(kb_keyboard, lv_color_hex(0x2D2D2D), 0);
     lv_obj_set_style_bg_color(kb_keyboard, lv_color_hex(0x444444), LV_PART_ITEMS);
     lv_obj_set_style_text_color(kb_keyboard, lv_color_hex(0xFFFFFF), LV_PART_ITEMS);
+    lv_obj_set_style_text_font(kb_keyboard, &lv_font_montserrat_32, LV_PART_ITEMS);
     lv_obj_add_event_cb(kb_keyboard, kb_ready_cb, LV_EVENT_READY, NULL);
     lv_obj_add_event_cb(kb_keyboard, kb_cancel_cb, LV_EVENT_CANCEL, NULL);
 
