@@ -32,11 +32,25 @@ led_strip_controller_t init_led_controller(uint8_t default_gpio1, uint8_t defaul
         DEBUG_INFO(MODULE_LED, "GPIO1 overridden from command line to: %d", controller.gpio1);
     }
 
-    controller.pio = pio0;
+    controller.pio = pio_open(0);
+    if (PIO_IS_ERR(controller.pio))
+    {
+        DEBUG_WARN(MODULE_LED, "PIO hardware not available (error %d) - LEDs disabled",
+                   PIO_ERR_VAL(controller.pio));
+        controller.pio     = NULL;
+        controller.enabled = false;
+        return controller;
+    }
     DEBUG_DEBUG(MODULE_LED, "Using PIO: pio0");
 
-    controller.sm1 = pio_claim_unused_sm(controller.pio, true);
-    controller.sm2 = pio_claim_unused_sm(controller.pio, true);
+    controller.sm1 = pio_claim_unused_sm(controller.pio, false);
+    controller.sm2 = pio_claim_unused_sm(controller.pio, false);
+    if (controller.sm1 < 0 || controller.sm2 < 0)
+    {
+        DEBUG_WARN(MODULE_LED, "Failed to claim PIO state machines - LEDs disabled");
+        controller.enabled = false;
+        return controller;
+    }
     DEBUG_DEBUG(MODULE_LED, "Claimed state machines: SM1=%d, SM2=%d", controller.sm1,
                 controller.sm2);
 
@@ -65,10 +79,7 @@ led_strip_controller_t init_led_controller(uint8_t default_gpio1, uint8_t defaul
 
     initialize_train_positions(controller.train_positions, NUM_TRAINS, PIXELS);
 
-    // TODO: Re-enable LED probe when LED strips are connected
-    // For now, disable LEDs to prevent PIO DMA from blocking the main loop
-    controller.enabled = false;
-    DEBUG_WARN(MODULE_LED, "LED output disabled (no LED strips connected)");
+    controller.enabled = true;
 
     DEBUG_INFO(MODULE_LED, "LED controller initialization completed (enabled=%d)", controller.enabled);
 

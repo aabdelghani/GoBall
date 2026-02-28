@@ -94,6 +94,7 @@ int main(int argc, char **argv)
     /*My Custom Logic */
     struct gpiod_line_bulk  event_lines;
     struct gpiod_line_event event;
+    int gpio_available = 0;
 
     /*********************
      *      GAME INITIALIZATION
@@ -101,8 +102,11 @@ int main(int argc, char **argv)
     DEBUG_TRACE(MODULE_LOGIC, "#5 Initializing game logic");
     if (logic_initialize_game(NUM_PLAYERS) < 0)
     {
-        DEBUG_ERROR(MODULE_LOGIC, "! Game initialization failed!");
-        return EXIT_FAILURE;
+        DEBUG_WARN(MODULE_LOGIC, "Game initialization failed (GPIO unavailable) - running in UI-only mode");
+    }
+    else
+    {
+        gpio_available = 1;
     }
     DEBUG_INFO(MODULE_LOGIC, "Game initialized with %d players", NUM_PLAYERS);
 
@@ -142,8 +146,11 @@ int main(int argc, char **argv)
         update_led_animation(&leds);
 
         // Wait for events on any of the lines (non-blocking call)
-        DEBUG_TRACE(MODULE_LOGIC, "#%d.%d Handling GPIO events", loop_counter, 2);
-        logic_handle_events(&event_lines, &event, num_players);
+        if (gpio_available)
+        {
+            DEBUG_TRACE(MODULE_LOGIC, "#%d.%d Handling GPIO events", loop_counter, 2);
+            logic_handle_events(&event_lines, &event, num_players);
+        }
 
         /* Periodically call the lv_task handler.
          * It could be done in a timer interrupt or an OS task too.*/
