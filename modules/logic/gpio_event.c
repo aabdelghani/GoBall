@@ -15,6 +15,8 @@
 #include <unistd.h>
 
 #include "ui/ui.h"
+#include "../sound_logic/sound_logic_event.h"
+#include "../ui_logic/ui_logic.event.h"
 /*********************
  *      TYPEDEFS
  *********************/

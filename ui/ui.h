@@ -18,8 +18,7 @@ extern "C" {
 #include "ui_events.h"
 #include "ui_theme_manager.h"
 #include "ui_themes.h"
-#include "../modules/ui_logic/ui_logic.event.h"
-#include "../modules/sound_logic/sound_logic_event.h"
+
 
 // SCREEN: ui_HScreen
 void ui_HScreen_screen_init(void);
@@ -41,6 +40,33 @@ void ui_event_HSVQPButton(lv_event_t * e);
 extern lv_obj_t * ui_HSVQPButton;
 void ui_event_HSVQPBText(lv_event_t * e);
 extern lv_obj_t * ui_HSVQPBText;
+void ui_event_HSUpButton(lv_event_t * e);
+extern lv_obj_t * ui_HSUpButton;
+void ui_event_HSUpBText(lv_event_t * e);
+extern lv_obj_t * ui_HSUpBText;
+void ui_event_HSTButton(lv_event_t * e);
+extern lv_obj_t * ui_HSTButton;
+void ui_event_HSTBText(lv_event_t * e);
+extern lv_obj_t * ui_HSTBText;
+// CUSTOM VARIABLES
+
+// SCREEN: ui_UFScreen
+void ui_UFScreen_screen_init(void);
+extern lv_obj_t * ui_UFScreen;
+extern lv_obj_t * ui_UFSLogo;
+extern lv_obj_t * ui_UFSFVPanel;
+extern lv_obj_t * ui_UFSFVPText;
+extern lv_obj_t * ui_UFSFVNText;
+extern lv_obj_t * ui_UFSCIPanel;
+extern lv_obj_t * ui_UFSCIPText;
+void ui_event_UFSBButton(lv_event_t * e);
+extern lv_obj_t * ui_UFSBButton;
+void ui_event_UFSBBText(lv_event_t * e);
+extern lv_obj_t * ui_UFSBBText;
+void ui_event_UFSUFButton(lv_event_t * e);
+extern lv_obj_t * ui_UFSUFButton;
+void ui_event_UFSUFBText(lv_event_t * e);
+extern lv_obj_t * ui_UFSUFBText;
 // CUSTOM VARIABLES
 
 // SCREEN: ui_SPPSScreen
@@ -448,6 +474,7 @@ extern lv_obj_t * ui_SP1P9HGSBCText;
 extern lv_obj_t * ui_SP1P9HGSBCPanel;
 extern lv_obj_t * ui_SP1P9HGSBCPText;
 extern lv_obj_t * ui_SP1P9HGSPScoreboard;
+void ui_event_SP1P9HGSPSText(lv_event_t * e);
 extern lv_obj_t * ui_SP1P9HGSPSText;
 extern lv_obj_t * ui_SP1P9HGSPSPanel;
 extern lv_obj_t * ui_SP1P9HGSPSPText;
@@ -2824,6 +2851,82 @@ extern lv_obj_t * ui_VQ4P18HGSP4Score;
 extern lv_obj_t * ui_VQ4P18HGSP4ScText;
 // CUSTOM VARIABLES
 
+// SCREEN: ui_TScreen
+void ui_TScreen_screen_init(void);
+extern lv_obj_t * ui_TScreen;
+extern lv_obj_t * ui_TSLogo;
+extern lv_obj_t * ui_TSFButton;
+extern lv_obj_t * ui_TSFBText;
+void ui_event_TSBButton(lv_event_t * e);
+extern lv_obj_t * ui_TSBButton;
+void ui_event_TSBBText(lv_event_t * e);
+extern lv_obj_t * ui_TSBBText;
+void ui_event_TSVButton(lv_event_t * e);
+extern lv_obj_t * ui_TSVButton;
+void ui_event_TSVBText(lv_event_t * e);
+extern lv_obj_t * ui_TSVBText;
+void ui_event_TSHiButton(lv_event_t * e);
+extern lv_obj_t * ui_TSHiButton;
+void ui_event_TSHiBText(lv_event_t * e);
+extern lv_obj_t * ui_TSHiBText;
+void ui_event_TSSButton(lv_event_t * e);
+extern lv_obj_t * ui_TSSButton;
+void ui_event_TSSBText(lv_event_t * e);
+extern lv_obj_t * ui_TSSBText;
+void ui_event_TSLoButton(lv_event_t * e);
+extern lv_obj_t * ui_TSLoButton;
+void ui_event_TSLoBText(lv_event_t * e);
+extern lv_obj_t * ui_TSLoBText;
+// CUSTOM VARIABLES
+
+// SCREEN: ui_TVSVideo
+void ui_TVSVideo_screen_init(void);
+extern lv_obj_t * ui_TVSVideo;
+extern lv_obj_t * ui_TVSVLogo;
+void ui_event_TVSVBButton(lv_event_t * e);
+extern lv_obj_t * ui_TVSVBButton;
+void ui_event_TVSVBBText(lv_event_t * e);
+extern lv_obj_t * ui_TVSVBBText;
+void ui_event_TVSVPanel(lv_event_t * e);
+extern lv_obj_t * ui_TVSVPanel;
+// CUSTOM VARIABLES
+
+// SCREEN: ui_THiSVScreen
+void ui_THiSVScreen_screen_init(void);
+extern lv_obj_t * ui_THiSVScreen;
+extern lv_obj_t * ui_THiSVSLogo;
+void ui_event_THiSVSBButton(lv_event_t * e);
+extern lv_obj_t * ui_THiSVSBButton;
+void ui_event_THiSVSBBText(lv_event_t * e);
+extern lv_obj_t * ui_THiSVSBBText;
+void ui_event_THiSVPanel(lv_event_t * e);
+extern lv_obj_t * ui_THiSVPanel;
+// CUSTOM VARIABLES
+
+// SCREEN: ui_TBVScreen
+void ui_TBVScreen_screen_init(void);
+extern lv_obj_t * ui_TBVScreen;
+extern lv_obj_t * ui_TBVSLogo;
+void ui_event_TBSVBButton(lv_event_t * e);
+extern lv_obj_t * ui_TBSVBButton;
+void ui_event_TBVSBBText(lv_event_t * e);
+extern lv_obj_t * ui_TBVSBBText;
+void ui_event_TBVSPanel(lv_event_t * e);
+extern lv_obj_t * ui_TBVSPanel;
+// CUSTOM VARIABLES
+
+// SCREEN: ui_TLoSVScreen
+void ui_TLoSVScreen_screen_init(void);
+extern lv_obj_t * ui_TLoSVScreen;
+extern lv_obj_t * ui_TLoSVSLogo;
+void ui_event_TLoSVSBButton(lv_event_t * e);
+extern lv_obj_t * ui_TLoSVSBButton;
+void ui_event_TLoSVSBBText(lv_event_t * e);
+extern lv_obj_t * ui_TLoSVSBBText;
+void ui_event_TBVSPanel1(lv_event_t * e);
+extern lv_obj_t * ui_TBVSPanel1;
+// CUSTOM VARIABLES
+
 // EVENTS
 
 extern lv_obj_t * ui____initial_actions0;
@@ -2832,18 +2935,20 @@ extern lv_obj_t * ui____initial_actions0;
 LV_IMG_DECLARE(ui_img_venice_18th_2560x720_png);    // assets/Venice 18th 2560x720.png
 LV_IMG_DECLARE(ui_img_studio_go_ball_logo_225x205_png);    // assets/Studio Go Ball Logo 225x205.png
 LV_IMG_DECLARE(ui_img_go_ball_450x431_png);    // assets/Go Ball 450x431.png
-LV_IMG_DECLARE(ui_img_go_ball_225x205_png);    // assets/Go Ball 225x205.png
-LV_IMG_DECLARE(ui_img_studio_go_ball_logo_350x319_png);    // assets/Studio Go Ball Logo 350x319.png
+LV_IMG_DECLARE(ui_img_go_ball_250x228_png);    // assets/Go Ball 250x228.png
 LV_IMG_DECLARE(ui_img_go_ball_300x273_png);    // assets/Go Ball 300x273.png
+LV_IMG_DECLARE(ui_img_studio_go_ball_logo_350x319_png);    // assets/Studio Go Ball Logo 350x319.png
+LV_IMG_DECLARE(ui_img_go_ball_500_x_250_png);    // assets/Go Ball 500 x 250.png
+LV_IMG_DECLARE(ui_img_go_ball_750_x_415_png);    // assets/Go Ball 750 x 415.png
+LV_IMG_DECLARE(ui_img_go_ball_225x205_png);    // assets/Go Ball 225x205.png
 LV_IMG_DECLARE(ui_img_crown_resized_png);    // assets/Crown resized.png
 LV_IMG_DECLARE(ui_img_go_ball_390x374_png);    // assets/Go Ball 390x374.png
 LV_IMG_DECLARE(ui_img_studio_go_ball_logo_200x182_png);    // assets/Studio Go Ball Logo 200x182.png
 LV_IMG_DECLARE(ui_img_studio_go_ball_logo_300x273_png);    // assets/Studio Go Ball Logo 300x273.png
-LV_IMG_DECLARE(ui_img_go_ball_250x228_png);    // assets/Go Ball 250x228.png
 LV_IMG_DECLARE(ui_img_go_ball_350x319_png);    // assets/Go Ball 350x319.png
-LV_IMG_DECLARE(ui_img_go_ball_750_x_415_png);    // assets/Go Ball 750 x 415.png
 LV_IMG_DECLARE(ui_img_go_ball_100x91_png);    // assets/Go Ball 100X91.png
 LV_IMG_DECLARE(ui_img_go_ball_200x182_png);    // assets/Go Ball 200x182.png
+LV_IMG_DECLARE(ui_img_go_ball_400_x_100_png);    // assets/Go Ball 400 x 100.png
 LV_IMG_DECLARE(ui_img_go_ball_600_x_400_png);    // assets/Go Ball 600 x 400.png
 LV_IMG_DECLARE(ui_img_studio_go_ball_logo_100x193_png);    // assets/Studio Go Ball Logo 100x193.png
 LV_IMG_DECLARE(ui_img_studio_go_ball_logo_150x137_png);    // assets/Studio Go Ball Logo 150x137.png
