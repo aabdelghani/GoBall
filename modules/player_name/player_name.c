@@ -318,8 +318,8 @@ static void show_keyboard(int player_idx)
     lv_obj_add_event_cb(kb_keyboard, kb_ready_cb, LV_EVENT_READY, NULL);
     lv_obj_add_event_cb(kb_keyboard, kb_cancel_cb, LV_EVENT_CANCEL, NULL);
 
-    /* Select all text so user can just start typing */
-    lv_textarea_set_cursor_pos(kb_textarea, 0);
+    /* Place cursor at end of text */
+    lv_textarea_set_cursor_pos(kb_textarea, LV_TEXTAREA_CURSOR_LAST);
 
     fprintf(stderr, "[PLAYER_NAME] Keyboard opened for Player %d\n", player_idx + 1);
 }
