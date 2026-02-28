@@ -7645,14 +7645,12 @@ void ui_event_TSBBText(lv_event_t * e)
     }
 }
 
-static bool _tvs_video_started = false;
-
 void ui_event_TSVButton(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_CLICKED) {
-        _tvs_video_started = false;  /* Reset so video starts on new screen */
+        game_video_prepare();
         _ui_screen_change(&ui_TVSVideo, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_TVSVideo_screen_init);
         _ui_screen_delete(&ui_TScreen);
     }
@@ -7664,7 +7662,7 @@ void ui_event_TSVBText(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_CLICKED) {
-        _tvs_video_started = false;  /* Reset so video starts on new screen */
+        game_video_prepare();
         _ui_screen_change(&ui_TVSVideo, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_TVSVideo_screen_init);
         _ui_screen_delete(&ui_TScreen);
     }
@@ -7742,12 +7740,9 @@ void ui_event_TVSVBButton(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_CLICKED) {
-        fprintf(stderr, "[UI-VIDEO] TVSVBButton CLICKED - stopping video and navigating back\n");
         game_video_stop();
-        /* Don't reset _tvs_video_started — prevents re-trigger during screen fade-out */
         _ui_screen_change(&ui_TScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_TScreen_screen_init);
         _ui_screen_delete(&ui_TVSVideo);
-        fprintf(stderr, "[UI-VIDEO] Screen transition initiated\n");
     }
 }
 
@@ -7757,31 +7752,17 @@ void ui_event_TVSVBBText(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_CLICKED) {
-        fprintf(stderr, "[UI-VIDEO] TVSVBBText CLICKED - stopping video and navigating back\n");
         game_video_stop();
-        /* Don't reset _tvs_video_started — prevents re-trigger during screen fade-out */
         _ui_screen_change(&ui_TScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_TScreen_screen_init);
         _ui_screen_delete(&ui_TVSVideo);
-        fprintf(stderr, "[UI-VIDEO] Screen transition initiated\n");
     }
 }
 
 
 static void _video_back_navigate(void)
 {
-    fprintf(stderr, "[UI-VIDEO] _video_back_navigate() called\n");
-    /* Don't reset _tvs_video_started — prevents re-trigger during screen fade-out */
     _ui_screen_change(&ui_TScreen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, &ui_TScreen_screen_init);
     _ui_screen_delete(&ui_TVSVideo);
-    fprintf(stderr, "[UI-VIDEO] Screen transition initiated from video back\n");
-}
-
-static void _start_video_async(void *data)
-{
-    (void)data;
-    fprintf(stderr, "[UI-VIDEO] _start_video_async() - starting video playback\n");
-    game_video_play(ui_TVSVPanel, GAME_VIDEO_VISUALIZE_TIP,
-                    _video_back_navigate);
 }
 
 void ui_event_TVSVPanel(lv_event_t * e)
@@ -7789,11 +7770,8 @@ void ui_event_TVSVPanel(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_DRAW_MAIN) {
-        if(!_tvs_video_started) {
-            fprintf(stderr, "[UI-VIDEO] TVSVPanel DRAW_MAIN - deferring video start\n");
-            _tvs_video_started = true;
-            lv_async_call(_start_video_async, NULL);
-        }
+        game_video_handle_draw(ui_TVSVPanel, GAME_VIDEO_VISUALIZE_TIP,
+                               _video_back_navigate);
     }
 }
 

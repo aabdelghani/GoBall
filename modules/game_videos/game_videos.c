@@ -26,6 +26,14 @@ static double _seek_offset = 0;
 static bool _paused = false;
 static bool _slider_dragging = false;
 
+/* Deferred-start flag for handle_draw */
+static bool _video_started = false;
+
+/* Saved args for async start */
+static lv_obj_t *_pending_panel = NULL;
+static const char *_pending_video_path = NULL;
+static game_video_back_cb_t _pending_back_cb = NULL;
+
 /* Height reserved for the LVGL controls area */
 #define CONTROLS_HEIGHT 85
 
@@ -56,6 +64,25 @@ static void get_video_duration(const char *path)
         }
         pclose(fp);
     }
+}
+
+/* Refocus app window after ffplay steals focus (Wayland/labwc).
+ * Uses double-fork so grandchild can sleep without blocking LVGL. */
+static void refocus_app_async(void)
+{
+    pid_t p = fork();
+    if (p == 0) {
+        /* Intermediate child — fork grandchild and exit immediately */
+        if (fork() == 0) {
+            /* Grandchild: wait for ffplay to appear, then refocus */
+            usleep(800000); /* 800ms */
+            execlp("wlrctl", "wlrctl", "toplevel", "focus",
+                   "SquareLine_Project", NULL);
+            _exit(1);
+        }
+        _exit(0);
+    }
+    if (p > 0) waitpid(p, NULL, 0); /* reap intermediate child instantly */
 }
 
 static void spawn_ffplay(double start_sec)
@@ -106,6 +133,8 @@ static void spawn_ffplay(double start_sec)
         video_pid = -1;
     } else {
         fprintf(stderr, "[VIDEO] ffplay spawned PID %d (seek=%.1fs, alwaysontop)\n", (int)video_pid, start_sec);
+        /* Refocus app window after delay so LVGL controls respond to first click */
+        refocus_app_async();
     }
 }
 
@@ -246,7 +275,8 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
     lv_obj_set_style_bg_color(seek_slider, lv_color_hex(0x00F46A), LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(seek_slider, lv_color_hex(0x00F46A), LV_PART_KNOB);
     lv_obj_set_style_pad_all(seek_slider, 3, LV_PART_KNOB);
-    lv_obj_add_event_cb(seek_slider, slider_event_cb, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(seek_slider, slider_event_cb, LV_EVENT_PRESSED, NULL);
+    lv_obj_add_event_cb(seek_slider, slider_event_cb, LV_EVENT_RELEASED, NULL);
 
     /* Buttons row */
     lv_obj_t *btn_row = lv_obj_create(controls_bar);
@@ -311,4 +341,32 @@ bool game_video_is_playing(void)
         return true;
     }
     return false;
+}
+
+/* ── reusable screen helpers ─────────────────────────── */
+
+void game_video_prepare(void)
+{
+    _video_started = false;
+    fprintf(stderr, "[VIDEO] game_video_prepare() - ready for next screen\n");
+}
+
+static void _deferred_play(void *data)
+{
+    (void)data;
+    fprintf(stderr, "[VIDEO] _deferred_play() - starting video playback\n");
+    game_video_play(_pending_panel, _pending_video_path, _pending_back_cb);
+}
+
+void game_video_handle_draw(lv_obj_t *panel, const char *video_path,
+                            game_video_back_cb_t back_cb)
+{
+    if (!_video_started) {
+        fprintf(stderr, "[VIDEO] handle_draw() - deferring video start\n");
+        _video_started = true;
+        _pending_panel = panel;
+        _pending_video_path = video_path;
+        _pending_back_cb = back_cb;
+        lv_async_call(_deferred_play, NULL);
+    }
 }
