@@ -60,3 +60,5 @@ notes.txt
 *.xlsx
 *.xls
 *.docx
+!doc/*.pdf
+!doc/*.docx

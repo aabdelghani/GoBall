@@ -99,12 +99,16 @@ int main(int argc, char **argv)
      *      GAME INITIALIZATION
      *********************/
     DEBUG_TRACE(MODULE_LOGIC, "#5 Initializing game logic");
+    int gpio_available = 0;
     if (logic_initialize_game(NUM_PLAYERS) < 0)
     {
-        DEBUG_ERROR(MODULE_LOGIC, "! Game initialization failed!");
-        return EXIT_FAILURE;
+        DEBUG_WARN(MODULE_LOGIC, "Game initialization failed (GPIO unavailable) - running in UI-only mode");
     }
-    DEBUG_INFO(MODULE_LOGIC, "Game initialized with %d players", NUM_PLAYERS);
+    else
+    {
+        gpio_available = 1;
+        DEBUG_INFO(MODULE_LOGIC, "Game initialized with %d players", NUM_PLAYERS);
+    }
 
     /* Initialize Sound System */
     DEBUG_TRACE(MODULE_SOUND, "#6 Initializing audio system");
@@ -142,8 +146,11 @@ int main(int argc, char **argv)
         update_led_animation(&leds);
 
         // Wait for events on any of the lines (non-blocking call)
-        DEBUG_TRACE(MODULE_LOGIC, "#%d.%d Handling GPIO events", loop_counter, 2);
-        logic_handle_events(&event_lines, &event, num_players);
+        if (gpio_available)
+        {
+            DEBUG_TRACE(MODULE_LOGIC, "#%d.%d Handling GPIO events", loop_counter, 2);
+            logic_handle_events(&event_lines, &event, num_players);
+        }
 
         /* Periodically call the lv_task handler.
          * It could be done in a timer interrupt or an OS task too.*/
