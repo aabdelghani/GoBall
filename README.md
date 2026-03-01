@@ -211,6 +211,16 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 - **Player name 1P scorecard fix**: registered missing `ui_SP19HPScPText` label so edited names appear on 1P 9H scorecard
 - **Video debug logging**: replaced raw `fprintf` with `DEBUG_*` macros via new `MODULE_VIDEO`; file existence and permission checks before playback; ffprobe/ffplay error reporting with `strerror`; exit status logging for ffplay process
 - **Audio debug logging**: audio format info (freq/format/channels) logged on init; file access checks before `Mix_LoadWAV`; channel assignment logged on play; cleanup logging on shutdown
+- **Yocto video path**: added `#ifdef YOCTO_BUILD` conditional in `game_videos.h` — uses `/opt/goball/videos/` on Yocto, relative path on desktop
+- **YOCTO_BUILD define**: added `add_compile_definitions(YOCTO_BUILD=1)` in CMakeLists.txt so the preprocessor flag reaches C code
+- **Yocto rpidistro-ffmpeg**: added `rpidistro-ffmpeg` as runtime dependency with SDL2 PACKAGECONFIG enabled (bbappend) — provides ffplay on RPi5
+- **Yocto video install**: recipe now installs `.mp4` files from `modules/game_videos/` to `/opt/goball/videos/` on the image
+- **Yocto branch switch**: goball recipe now builds from `ui-redesign` git branch instead of `master`
+- **Weston desktop-shell**: switched from `kiosk-shell.so` to `desktop-shell.so` with `panel-position=none` — allows ffplay to render as a positioned window instead of forced fullscreen
+- **Psplash loading bar**: custom progress bar positioned over the green rectangle in the splash image (x+564, y=344) with green theme colors (#00F46A)
+- **Runtime video positioning**: video overlay now reads LVGL panel coordinates at runtime via `lv_obj_get_coords()` instead of hardcoded values — adapts to UI layout changes
+- **LVGL 9.x API fix**: replaced non-existent `lv_area_get_x1()`/`lv_area_get_y1()` with direct `lv_area_t` struct field access (`.x1`, `.y1`)
+- **Video debug enhancements**: added ffplay command logging, SDL window position logging, LVGL panel coord logging, and early-death detection (100ms check after spawn)
 
 ### 02/28/2026
 - **Development Dashboard** (`tools/goball_dashboard.py`): 5-tab tkinter GUI — deploy & run, GPIO simulator, test harness, log analyzer, config editor
