@@ -30,6 +30,7 @@ typedef enum
     MODULE_ANIMATION,
     MODULE_LOGIC,
     MODULE_HAL,   // Added HAL module
+    MODULE_VIDEO, // Video playback (ffplay)
     MODULE_COUNT  // Keep this as the last element
 } debug_module_t;
 
@@ -58,7 +59,8 @@ typedef enum
 /* Project-specific module names - now as string constants */
 static const char *DEBUG_MODULE_NAMES[MODULE_COUNT] = {
     "MAIN", "LVGL", "UI", "GAME", "SOUND", "LED", "GPIO", "INPUT", "ANIMATION", "LOGIC",
-    "HAL"  // Added HAL module name
+    "HAL",   // Added HAL module name
+    "VIDEO"  // Video playback module
 };
 
 /* Function prototypes */

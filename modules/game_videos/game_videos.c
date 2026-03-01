@@ -1,5 +1,6 @@
 #include "game_videos.h"
 #include "../../ui/ui.h"
+#include "../debug/debug.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/prctl.h>
+#include <errno.h>
 
 static pid_t video_pid = -1;
 static game_video_back_cb_t _back_cb = NULL;
@@ -59,10 +61,16 @@ static void get_video_duration(const char *path)
             double dur = atof(buf);
             if (dur > 0.5) {
                 _video_duration = dur;
-                fprintf(stderr, "[VIDEO] Detected duration: %.1f sec\n", _video_duration);
+                DEBUG_INFO(MODULE_VIDEO, "Detected duration: %.1f sec", _video_duration);
+            } else {
+                DEBUG_WARN(MODULE_VIDEO, "ffprobe returned invalid duration: %s", buf);
             }
+        } else {
+            DEBUG_WARN(MODULE_VIDEO, "ffprobe returned no output for: %s", path);
         }
         pclose(fp);
+    } else {
+        DEBUG_ERROR(MODULE_VIDEO, "Failed to run ffprobe (is ffmpeg installed?): %s", strerror(errno));
     }
 }
 
@@ -127,12 +135,16 @@ static void spawn_ffplay(double start_sec)
                    "-loglevel", "quiet",
                    _video_path, NULL);
         }
+        /* execlp only returns on error */
+        fprintf(stderr, "[VIDEO] ERROR: execlp(ffplay) failed: %s (is ffplay installed?)\n",
+                strerror(errno));
         _exit(1);
     } else if (video_pid < 0) {
-        fprintf(stderr, "[VIDEO] ERROR: fork() failed\n");
+        DEBUG_ERROR(MODULE_VIDEO, "fork() failed: %s", strerror(errno));
         video_pid = -1;
     } else {
-        fprintf(stderr, "[VIDEO] ffplay spawned PID %d (seek=%.1fs, alwaysontop)\n", (int)video_pid, start_sec);
+        DEBUG_INFO(MODULE_VIDEO, "ffplay spawned PID %d (seek=%.1fs, pos=%d,%d size=%dx%d)",
+                   (int)video_pid, start_sec, _screen_x, _screen_y, _video_w, _video_h);
         /* Refocus app window after delay so LVGL controls respond to first click */
         refocus_app_async();
     }
@@ -166,13 +178,13 @@ static void btn_pause_cb(lv_event_t *e)
     (void)e;
     if (video_pid > 0) {
         if (_paused) {
-            fprintf(stderr, "[VIDEO] Resume\n");
+            DEBUG_DEBUG(MODULE_VIDEO, "Resume (PID %d, offset=%.1fs)", (int)video_pid, _seek_offset);
             kill(video_pid, SIGCONT);
             _playback_start_time = get_time_sec();
             _paused = false;
         } else {
-            fprintf(stderr, "[VIDEO] Pause\n");
             _seek_offset += get_time_sec() - _playback_start_time;
+            DEBUG_DEBUG(MODULE_VIDEO, "Pause (PID %d, position=%.1fs)", (int)video_pid, _seek_offset);
             kill(video_pid, SIGSTOP);
             _paused = true;
         }
@@ -189,7 +201,7 @@ static void slider_event_cb(lv_event_t *e)
         _slider_dragging = false;
         int val = lv_slider_get_value(seek_slider);
         double seek_to = (_video_duration * val) / 100.0;
-        fprintf(stderr, "[VIDEO] Seek to %.1f sec (%d%%)\n", seek_to, val);
+        DEBUG_INFO(MODULE_VIDEO, "Seek to %.1f/%.1f sec (%d%%)", seek_to, _video_duration, val);
         spawn_ffplay(seek_to);
     }
 }
@@ -219,10 +231,21 @@ static lv_obj_t *create_control_btn(lv_obj_t *parent, const char *text, lv_event
 void game_video_play(lv_obj_t *parent, const char *video_path,
                      game_video_back_cb_t back_cb)
 {
-    fprintf(stderr, "[VIDEO] game_video_play() called\n");
-    fprintf(stderr, "[VIDEO]   video: %s\n", video_path);
+    DEBUG_INFO(MODULE_VIDEO, "game_video_play() called");
+    DEBUG_INFO(MODULE_VIDEO, "  video path: %s", video_path);
+
+    /* Check if video file exists */
+    if (access(video_path, F_OK) != 0) {
+        DEBUG_ERROR(MODULE_VIDEO, "Video file not found: %s", video_path);
+        return;
+    }
+    if (access(video_path, R_OK) != 0) {
+        DEBUG_ERROR(MODULE_VIDEO, "Video file not readable (permission denied): %s", video_path);
+        return;
+    }
 
     if (video_pid > 0) {
+        DEBUG_DEBUG(MODULE_VIDEO, "Stopping previous video (PID %d) before starting new one", (int)video_pid);
         game_video_stop();
     }
 
@@ -237,7 +260,9 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
     SDL_Window *sdl_win = SDL_GetWindowFromID(1);
     if (sdl_win) {
         SDL_GetWindowPosition(sdl_win, &win_x, &win_y);
-        fprintf(stderr, "[VIDEO] SDL window position: %d, %d\n", win_x, win_y);
+        DEBUG_DEBUG(MODULE_VIDEO, "SDL window position: %d, %d", win_x, win_y);
+    } else {
+        DEBUG_WARN(MODULE_VIDEO, "SDL_GetWindowFromID(1) returned NULL — using position 0,0");
     }
 
     /* Panel inner area: 1296x528 starting at (632, 96) within LVGL window */
@@ -249,8 +274,8 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
     _video_w = panel_w;
     _video_h = panel_h - CONTROLS_HEIGHT;
 
-    fprintf(stderr, "[VIDEO] Video rect: screen(%d,%d) size(%dx%d)\n",
-            _screen_x, _screen_y, _video_w, _video_h);
+    DEBUG_INFO(MODULE_VIDEO, "Video rect: screen(%d,%d) size(%dx%d)",
+               _screen_x, _screen_y, _video_w, _video_h);
 
     /* Set up parent layout — controls at bottom */
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
@@ -294,12 +319,12 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
     /* Spawn ffplay */
     spawn_ffplay(0);
 
-    fprintf(stderr, "[VIDEO] Playback started with controls\n");
+    DEBUG_INFO(MODULE_VIDEO, "Playback started (duration=%.1fs, controls enabled)", _video_duration);
 }
 
 void game_video_stop(void)
 {
-    fprintf(stderr, "[VIDEO] game_video_stop() called (pid=%d)\n", (int)video_pid);
+    DEBUG_INFO(MODULE_VIDEO, "game_video_stop() called (pid=%d)", (int)video_pid);
 
     if (progress_timer != NULL) {
         lv_timer_delete(progress_timer);
@@ -307,12 +332,17 @@ void game_video_stop(void)
     }
 
     if (video_pid > 0) {
-        fprintf(stderr, "[VIDEO] Killing ffplay PID %d\n", (int)video_pid);
+        DEBUG_DEBUG(MODULE_VIDEO, "Sending SIGTERM to ffplay PID %d", (int)video_pid);
         kill(video_pid, SIGCONT);  /* Resume first in case paused */
         kill(video_pid, SIGTERM);
-        waitpid(video_pid, NULL, 0);
+        int status;
+        waitpid(video_pid, &status, 0);
+        if (WIFEXITED(status)) {
+            DEBUG_DEBUG(MODULE_VIDEO, "ffplay exited with code %d", WEXITSTATUS(status));
+        } else if (WIFSIGNALED(status)) {
+            DEBUG_DEBUG(MODULE_VIDEO, "ffplay killed by signal %d", WTERMSIG(status));
+        }
         video_pid = -1;
-        fprintf(stderr, "[VIDEO] ffplay terminated\n");
     }
 
     if (controls_bar != NULL) {
@@ -326,7 +356,7 @@ void game_video_stop(void)
     _slider_dragging = false;
     _paused = false;
     _seek_offset = 0;
-    fprintf(stderr, "[VIDEO] game_video_stop() complete\n");
+    DEBUG_DEBUG(MODULE_VIDEO, "game_video_stop() complete");
 }
 
 bool game_video_is_playing(void)
@@ -335,6 +365,11 @@ bool game_video_is_playing(void)
         int status;
         pid_t result = waitpid(video_pid, &status, WNOHANG);
         if (result == video_pid) {
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+                DEBUG_WARN(MODULE_VIDEO, "ffplay exited unexpectedly with code %d", WEXITSTATUS(status));
+            } else if (WIFSIGNALED(status)) {
+                DEBUG_WARN(MODULE_VIDEO, "ffplay killed by signal %d", WTERMSIG(status));
+            }
             video_pid = -1;
             return false;
         }
@@ -348,13 +383,13 @@ bool game_video_is_playing(void)
 void game_video_prepare(void)
 {
     _video_started = false;
-    fprintf(stderr, "[VIDEO] game_video_prepare() - ready for next screen\n");
+    DEBUG_DEBUG(MODULE_VIDEO, "game_video_prepare() - ready for next screen");
 }
 
 static void _deferred_play(void *data)
 {
     (void)data;
-    fprintf(stderr, "[VIDEO] _deferred_play() - starting video playback\n");
+    DEBUG_DEBUG(MODULE_VIDEO, "_deferred_play() - starting video playback");
     game_video_play(_pending_panel, _pending_video_path, _pending_back_cb);
 }
 
@@ -362,7 +397,7 @@ void game_video_handle_draw(lv_obj_t *panel, const char *video_path,
                             game_video_back_cb_t back_cb)
 {
     if (!_video_started) {
-        fprintf(stderr, "[VIDEO] handle_draw() - deferring video start\n");
+        DEBUG_DEBUG(MODULE_VIDEO, "handle_draw() - deferring video start for: %s", video_path);
         _video_started = true;
         _pending_panel = panel;
         _pending_video_path = video_path;

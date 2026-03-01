@@ -201,7 +201,13 @@ python3 tools/goball_dashboard.py
 ### Debug Levels (modules/debug/debug.h)
 Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`, `DEBUG(4)`, `TRACE(5)`
 
+**Debug modules:** `MAIN`, `LVGL`, `UI`, `GAME`, `SOUND`, `LED`, `GPIO`, `INPUT`, `ANIMATION`, `LOGIC`, `HAL`, `VIDEO`
+
 ## Changelog
+
+### 03/01/2026
+- **Video debug logging**: replaced raw `fprintf` with `DEBUG_*` macros via new `MODULE_VIDEO`; file existence and permission checks before playback; ffprobe/ffplay error reporting with `strerror`; exit status logging for ffplay process
+- **Audio debug logging**: audio format info (freq/format/channels) logged on init; file access checks before `Mix_LoadWAV`; channel assignment logged on play; cleanup logging on shutdown
 
 ### 02/28/2026
 - **Development Dashboard** (`tools/goball_dashboard.py`): 5-tab tkinter GUI — deploy & run, GPIO simulator, test harness, log analyzer, config editor
