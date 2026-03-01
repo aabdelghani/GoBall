@@ -66,7 +66,9 @@ has a working toggle the led to green in case of scoring a point
 03/01/2026 – Addition: Yocto rpidistro-ffmpeg dependency with SDL2 PACKAGECONFIG (bbappend) for ffplay on RPi5
 03/01/2026 – Addition: Yocto recipe installs .mp4 video files to /opt/goball/videos/
 03/01/2026 – Modification: Yocto goball recipe switched from master to ui-redesign branch
-03/01/2026 – Modification: Weston switched from kiosk-shell to desktop-shell with panel-position=none for windowed ffplay
+03/01/2026 – Modification: Replaced Weston with labwc compositor (wlroots-based, matching Raspi OS) for proper ffplay window positioning
+03/01/2026 – Addition: Created wlroots 0.17.4 and labwc 0.7.4 Yocto recipes from scratch in meta-goball
+03/01/2026 – Addition: labwc-init recipe with rc.xml window rules, environment, and systemd service
 03/01/2026 – Addition: Custom psplash loading bar positioned over green rectangle in splash image (x+564, y=344) with green theme (#00F46A)
 03/01/2026 – Addition: Runtime video positioning using lv_obj_get_coords() instead of hardcoded panel values
 03/01/2026 – Fix: LVGL 9.x API — replaced non-existent lv_area_get_x1/y1 with direct struct field access (.x1, .y1)

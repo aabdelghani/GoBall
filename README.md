@@ -216,7 +216,7 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 - **Yocto rpidistro-ffmpeg**: added `rpidistro-ffmpeg` as runtime dependency with SDL2 PACKAGECONFIG enabled (bbappend) — provides ffplay on RPi5
 - **Yocto video install**: recipe now installs `.mp4` files from `modules/game_videos/` to `/opt/goball/videos/` on the image
 - **Yocto branch switch**: goball recipe now builds from `ui-redesign` git branch instead of `master`
-- **Weston desktop-shell**: switched from `kiosk-shell.so` to `desktop-shell.so` with `panel-position=none` — allows ffplay to render as a positioned window instead of forced fullscreen
+- **Yocto labwc compositor**: replaced Weston with labwc (wlroots-based compositor matching Raspi OS) — supports window positioning rules for ffplay video overlay; created wlroots 0.17.4 and labwc 0.7.4 Yocto recipes from scratch
 - **Psplash loading bar**: custom progress bar positioned over the green rectangle in the splash image (x+564, y=344) with green theme colors (#00F46A)
 - **Runtime video positioning**: video overlay now reads LVGL panel coordinates at runtime via `lv_obj_get_coords()` instead of hardcoded values — adapts to UI layout changes
 - **LVGL 9.x API fix**: replaced non-existent `lv_area_get_x1()`/`lv_area_get_y1()` with direct `lv_area_t` struct field access (`.x1`, `.y1`)
