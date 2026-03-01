@@ -145,6 +145,10 @@ static void spawn_ffplay(double start_sec)
     } else {
         DEBUG_INFO(MODULE_VIDEO, "ffplay spawned PID %d (seek=%.1fs, pos=%d,%d size=%dx%d)",
                    (int)video_pid, start_sec, _screen_x, _screen_y, _video_w, _video_h);
+        DEBUG_DEBUG(MODULE_VIDEO, "ffplay cmd: ffplay -noborder -alwaysontop -x %d -y %d -left %d -top %d %s%s %s",
+                    _video_w, _video_h, _screen_x, _screen_y,
+                    start_sec > 0.5 ? "-ss " : "", start_sec > 0.5 ? "N" : "",
+                    _video_path);
         /* Refocus app window after delay so LVGL controls respond to first click */
         refocus_app_async();
     }
@@ -265,11 +269,23 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
         DEBUG_WARN(MODULE_VIDEO, "SDL_GetWindowFromID(1) returned NULL — using position 0,0");
     }
 
-    /* Panel inner area: 1320x552 centered on 2560x720 screen */
-    int panel_x = 620;
-    int panel_y = 84;
-    int panel_w = 1320;
-    int panel_h = 552;
+    /* Query actual LVGL panel position at runtime */
+    lv_area_t panel_area;
+    lv_obj_get_coords(parent, &panel_area);
+    int lvgl_x = lv_area_get_x1(&panel_area);
+    int lvgl_y = lv_area_get_y1(&panel_area);
+    int lvgl_w = lv_area_get_width(&panel_area);
+    int lvgl_h = lv_area_get_height(&panel_area);
+    DEBUG_INFO(MODULE_VIDEO, "LVGL panel coords: x=%d y=%d w=%d h=%d", lvgl_x, lvgl_y, lvgl_w, lvgl_h);
+
+    /* Use LVGL panel position directly */
+    int panel_x = lvgl_x;
+    int panel_y = lvgl_y;
+    int panel_w = lvgl_w;
+    int panel_h = lvgl_h;
+
+    DEBUG_DEBUG(MODULE_VIDEO, "Panel: pos(%d,%d) size(%dx%d), controls_height=%d",
+                panel_x, panel_y, panel_w, panel_h, CONTROLS_HEIGHT);
 
     _screen_x = win_x + panel_x;
     _screen_y = win_y + panel_y;
@@ -278,6 +294,8 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
 
     DEBUG_INFO(MODULE_VIDEO, "Video rect: screen(%d,%d) size(%dx%d)",
                _screen_x, _screen_y, _video_w, _video_h);
+    DEBUG_DEBUG(MODULE_VIDEO, "Computed from: win(%d,%d) + panel(%d,%d), video_size=%dx%d",
+                win_x, win_y, panel_x, panel_y, _video_w, _video_h);
 
     /* Set up parent layout — controls at bottom */
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
@@ -321,7 +339,21 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
     /* Spawn ffplay */
     spawn_ffplay(0);
 
-    DEBUG_INFO(MODULE_VIDEO, "Playback started (duration=%.1fs, controls enabled)", _video_duration);
+    /* Check if ffplay is still alive after short delay */
+    usleep(100000); /* 100ms */
+    if (video_pid > 0) {
+        int status;
+        pid_t result = waitpid(video_pid, &status, WNOHANG);
+        if (result == video_pid) {
+            DEBUG_ERROR(MODULE_VIDEO, "ffplay died immediately! exit=%d signal=%d",
+                        WIFEXITED(status) ? WEXITSTATUS(status) : -1,
+                        WIFSIGNALED(status) ? WTERMSIG(status) : -1);
+            video_pid = -1;
+        }
+    }
+
+    DEBUG_INFO(MODULE_VIDEO, "Playback started (duration=%.1fs, controls enabled, pid=%d)",
+               _video_duration, (int)video_pid);
 }
 
 void game_video_stop(void)
