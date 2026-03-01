@@ -287,8 +287,8 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
     DEBUG_DEBUG(MODULE_VIDEO, "Panel: pos(%d,%d) size(%dx%d), controls_height=%d",
                 panel_x, panel_y, panel_w, panel_h, CONTROLS_HEIGHT);
 
-    _screen_x = win_x + panel_x;
-    _screen_y = win_y + panel_y;
+    _screen_x = 500;
+    _screen_y = 69;
     _video_w = panel_w;
     _video_h = panel_h - CONTROLS_HEIGHT;
 
