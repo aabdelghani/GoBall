@@ -85,7 +85,7 @@ static void refocus_app_async(void)
             /* Grandchild: wait for ffplay to appear, then refocus */
             usleep(800000); /* 800ms */
             execlp("wlrctl", "wlrctl", "toplevel", "focus",
-                   "SquareLine_Project", NULL);
+                   "app", NULL);
             _exit(1);
         }
         _exit(0);

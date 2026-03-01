@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "lvgl/lvgl.h"
+#include <SDL2/SDL.h>
 #include "modules/debug/debug.h"
 #include "modules/led_logic/led_logic_event.h"
 #include "modules/logic/gpio_event.h"
@@ -195,6 +196,13 @@ static lv_display_t *hal_init(int32_t w, int32_t h)
     DEBUG_TRACE(MODULE_HAL, "#hal.2 Creating SDL window");
     lv_display_t *disp = lv_sdl_window_create(w, h);
     DEBUG_DEBUG(MODULE_HAL, "SDL window created: %dx%d", w, h);
+
+    /* Hide title bar and set window name */
+    SDL_Window *sdl_win = SDL_GetWindowFromID(1);
+    if (sdl_win) {
+        SDL_SetWindowBordered(sdl_win, SDL_FALSE);
+        SDL_SetWindowTitle(sdl_win, "app");
+    }
 
     DEBUG_TRACE(MODULE_HAL, "#hal.3 Creating mouse input device");
     lv_indev_t *mouse = lv_sdl_mouse_create();
