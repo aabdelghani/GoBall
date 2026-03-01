@@ -266,8 +266,8 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
     }
 
     /* Panel inner area: 1320x552 centered on 2560x720 screen */
-    int panel_x = (2560 - 1320) / 2;  /* 620 */
-    int panel_y = (720 - 552) / 2;    /* 84 */
+    int panel_x = 620;
+    int panel_y = 84;
     int panel_w = 1320;
     int panel_h = 552;
 
