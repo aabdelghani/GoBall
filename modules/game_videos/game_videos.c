@@ -272,8 +272,8 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
     /* Query actual LVGL panel position at runtime */
     lv_area_t panel_area;
     lv_obj_get_coords(parent, &panel_area);
-    int lvgl_x = lv_area_get_x1(&panel_area);
-    int lvgl_y = lv_area_get_y1(&panel_area);
+    int lvgl_x = panel_area.x1;
+    int lvgl_y = panel_area.y1;
     int lvgl_w = lv_area_get_width(&panel_area);
     int lvgl_h = lv_area_get_height(&panel_area);
     DEBUG_INFO(MODULE_VIDEO, "LVGL panel coords: x=%d y=%d w=%d h=%d", lvgl_x, lvgl_y, lvgl_w, lvgl_h);
