@@ -5,7 +5,11 @@
 #include <stdbool.h>
 
 /* Video file paths — add new videos here */
+#ifdef YOCTO_BUILD
+#define GAME_VIDEO_VISUALIZE_TIP "/opt/goball/videos/visualize_tip.mp4"
+#else
 #define GAME_VIDEO_VISUALIZE_TIP "/home/q/Desktop/SquareLine_Project/modules/game_videos/visualize_tip.mp4"
+#endif
 
 /* Callback invoked when user presses Back on video controls */
 typedef void (*game_video_back_cb_t)(void);
