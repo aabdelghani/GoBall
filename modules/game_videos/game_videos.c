@@ -265,9 +265,11 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
         DEBUG_WARN(MODULE_VIDEO, "SDL_GetWindowFromID(1) returned NULL — using position 0,0");
     }
 
-    /* Panel inner area: 1296x528 starting at (632, 96) within LVGL window */
-    int panel_x = 632, panel_y = 96;
-    int panel_w = 1296, panel_h = 528;
+    /* Panel inner area: 1320x552 centered on 2560x720 screen */
+    int panel_x = (2560 - 1320) / 2;  /* 620 */
+    int panel_y = (720 - 552) / 2;    /* 84 */
+    int panel_w = 1320;
+    int panel_h = 552;
 
     _screen_x = win_x + panel_x;
     _screen_y = win_y + panel_y;
