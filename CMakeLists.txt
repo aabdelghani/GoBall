@@ -11,6 +11,10 @@ set(CMAKE_CXX_STANDARD 11)
 
 project(SquareLine_Project C)
 
+if(YOCTO_BUILD)
+    add_compile_definitions(YOCTO_BUILD=1)
+endif()
+
 # Debug configuration options
 option(ENABLE_DEBUG "Enable debug system" ON)
 option(ENABLE_DEBUG_COLORS "Enable colored debug output" ON)
