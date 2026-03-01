@@ -1364,6 +1364,10 @@ void update_player_highlight(uint8_t detection_count, uint8_t current_hole, uint
                     DEBUG_DEBUG(MODULE_UI, "Stroke Play - 9 holes");
                     switch (num_players)
                     {
+                        case 1:
+                            DEBUG_DEBUG(MODULE_UI, "Stroke Play - 1 player, 9 holes");
+                            highlighted_player = 1;
+                            break;
                         case 2:  // Exact pattern for 2-player stroke play
                             DEBUG_DEBUG(MODULE_UI, "Stroke Play - 2 players, 9 holes");
                             two_player_highlight_pattern(GAME_MODE_STROKE_PLAY, NINE_HOLES);
@@ -1391,6 +1395,10 @@ void update_player_highlight(uint8_t detection_count, uint8_t current_hole, uint
                     DEBUG_DEBUG(MODULE_UI, "Stroke Play - 18 holes");
                     switch (num_players)
                     {
+                        case 1:
+                            DEBUG_DEBUG(MODULE_UI, "Stroke Play - 1 player, 18 holes");
+                            highlighted_player = 1;
+                            break;
                         case 2:  // Exact pattern for 2-player stroke play
                             DEBUG_DEBUG(MODULE_UI, "Stroke Play - 2 players, 18 holes");
                             two_player_highlight_pattern(GAME_MODE_STROKE_PLAY, EIGHTEEN_HOLES);

@@ -143,6 +143,7 @@ void player_name_init(void)
     /* ── Stroke Play scorecards ── */
 
     /* 1P */
+    REG(ui_SP19HPScPText, 0);
     REG(ui_SP1P18HScPText, 0);
 
     /* 2P */

@@ -206,6 +206,9 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 ## Changelog
 
 ### 03/01/2026
+- **Video path fix**: changed hardcoded `/home/q/...` video path to relative `modules/game_videos/` — works on any Pi regardless of username
+- **Stroke Play 1P highlight fix**: added `case 1:` for single-player 9H and 18H — removes "Unsupported player count" warning
+- **Player name 1P scorecard fix**: registered missing `ui_SP19HPScPText` label so edited names appear on 1P 9H scorecard
 - **Video debug logging**: replaced raw `fprintf` with `DEBUG_*` macros via new `MODULE_VIDEO`; file existence and permission checks before playback; ffprobe/ffplay error reporting with `strerror`; exit status logging for ffplay process
 - **Audio debug logging**: audio format info (freq/format/channels) logged on init; file access checks before `Mix_LoadWAV`; channel assignment logged on play; cleanup logging on shutdown
 
