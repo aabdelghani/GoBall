@@ -9,7 +9,7 @@ endif()
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 
-project(SquareLine_Project C)
+project(goball C)
 
 if(YOCTO_BUILD)
     add_compile_definitions(YOCTO_BUILD=1)

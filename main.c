@@ -201,7 +201,7 @@ static lv_display_t *hal_init(int32_t w, int32_t h)
     SDL_Window *sdl_win = SDL_GetWindowFromID(1);
     if (sdl_win) {
         SDL_SetWindowBordered(sdl_win, SDL_FALSE);
-        SDL_SetWindowTitle(sdl_win, "app");
+        SDL_SetWindowTitle(sdl_win, "goball");
     }
 
     DEBUG_TRACE(MODULE_HAL, "#hal.3 Creating mouse input device");
