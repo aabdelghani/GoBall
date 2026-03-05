@@ -37,15 +37,38 @@ static const char *_pending_video_path = NULL;
 static game_video_back_cb_t _pending_back_cb = NULL;
 
 /* Height reserved for the LVGL controls area */
-#define CONTROLS_HEIGHT 40
+#define CONTROLS_HEIGHT 85
 
 /* ── helpers ──────────────────────────────────────────── */
+
+/* Video source dimensions (detected by ffprobe, fallback 1920x1080) */
+static int _src_w = 1920, _src_h = 1080;
 
 static double get_time_sec(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return ts.tv_sec + ts.tv_nsec / 1e9;
+}
+
+static void get_video_dimensions(const char *path)
+{
+    char cmd[512];
+    snprintf(cmd, sizeof(cmd),
+             "ffprobe -v quiet -select_streams v:0 "
+             "-show_entries stream=width,height -of csv=p=0:s=x '%s' 2>/dev/null", path);
+    FILE *fp = popen(cmd, "r");
+    if (fp) {
+        int w = 0, h = 0;
+        if (fscanf(fp, "%dx%d", &w, &h) == 2 && w > 0 && h > 0) {
+            _src_w = w;
+            _src_h = h;
+            DEBUG_INFO(MODULE_VIDEO, "Detected video dimensions: %dx%d", _src_w, _src_h);
+        } else {
+            DEBUG_WARN(MODULE_VIDEO, "ffprobe could not detect dimensions, using %dx%d", _src_w, _src_h);
+        }
+        pclose(fp);
+    }
 }
 
 static void get_video_duration(const char *path)
@@ -123,7 +146,6 @@ static void spawn_ffplay(double start_sec)
                    "-x", width_s, "-y", height_s,
                    "-left", left_s, "-top", top_s,
                    "-ss", ss_s,
-                   "-autoexit",
                    "-loglevel", "quiet",
                    _video_path, NULL);
         } else {
@@ -131,7 +153,6 @@ static void spawn_ffplay(double start_sec)
                    "-noborder", "-alwaysontop",
                    "-x", width_s, "-y", height_s,
                    "-left", left_s, "-top", top_s,
-                   "-autoexit",
                    "-loglevel", "quiet",
                    _video_path, NULL);
         }
@@ -162,11 +183,9 @@ static void progress_timer_cb(lv_timer_t *timer)
     if (_slider_dragging || _paused || video_pid <= 0 || seek_slider == NULL) return;
 
     double elapsed = get_time_sec() - _playback_start_time + _seek_offset;
-    /* Handle looping */
+    /* Clamp at end — video stays on last frame */
     if (elapsed >= _video_duration) {
-        elapsed = 0;
-        _seek_offset = 0;
-        _playback_start_time = get_time_sec();
+        elapsed = _video_duration;
     }
 
     int pct = (int)((elapsed / _video_duration) * 100);
@@ -256,8 +275,9 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
     _back_cb = back_cb;
     _video_path = video_path;
 
-    /* Get video duration */
+    /* Get video metadata */
     get_video_duration(video_path);
+    get_video_dimensions(video_path);
 
     /* Get SDL window position on screen */
     int win_x = 0, win_y = 0;
@@ -287,24 +307,69 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
     DEBUG_DEBUG(MODULE_VIDEO, "Panel: pos(%d,%d) size(%dx%d), controls_height=%d",
                 panel_x, panel_y, panel_w, panel_h, CONTROLS_HEIGHT);
 
-    /* Panel inner area: 1296x528 at (632, 96) on 2560x720 display
-     * Video source: 360x640 (9:16 portrait)
-     * Leave CONTROLS_HEIGHT (40px) at bottom for pause/seek bar
-     * Video area: 1296 x 488, video fitted to height maintaining aspect ratio */
-    int inner_x = 632, inner_y = 96;
-    int inner_w = 1296;
-    int avail_h = 528 - CONTROLS_HEIGHT;  /* 488px */
-    int fit_w = avail_h * 360 / 640;      /* 274px */
+    /* Use actual panel coordinates from LVGL, account for 12px border */
+    int border = 12;
+    int inner_x = panel_x + border;
+    int inner_y = panel_y + border;
+    int inner_w = panel_w - 2 * border;
+    int inner_h = panel_h - 2 * border;
+    int avail_h = inner_h - CONTROLS_HEIGHT;
 
-    _screen_x = inner_x + (inner_w - fit_w) / 2;  /* 1143 */
-    _screen_y = inner_y;                            /* 96 */
-    _video_w = fit_w;                               /* 274 */
-    _video_h = avail_h;                             /* 488 */
+    /* Fit video to available area maintaining source aspect ratio */
+    int fit_w, fit_h;
+    /* Try fit to height first */
+    fit_w = avail_h * _src_w / _src_h;
+    fit_h = avail_h;
+    /* If too wide, fit to width instead */
+    if (fit_w > inner_w) {
+        fit_w = inner_w;
+        fit_h = inner_w * _src_h / _src_w;
+    }
+
+    _screen_x = inner_x + (inner_w - fit_w) / 2;
+    _screen_y = inner_y + (avail_h - fit_h) / 2;
+    _video_w = fit_w;
+    _video_h = fit_h;
 
     DEBUG_INFO(MODULE_VIDEO, "Video rect: screen(%d,%d) size(%dx%d)",
                _screen_x, _screen_y, _video_w, _video_h);
-    DEBUG_DEBUG(MODULE_VIDEO, "Computed from: win(%d,%d) + panel(%d,%d), video_size=%dx%d",
-                win_x, win_y, panel_x, panel_y, _video_w, _video_h);
+    DEBUG_INFO(MODULE_VIDEO, "  Panel outer: x=%d y=%d w=%d h=%d", panel_x, panel_y, panel_w, panel_h);
+    DEBUG_INFO(MODULE_VIDEO, "  Panel inner: x=%d y=%d w=%d h=%d (border=%d)", inner_x, inner_y, inner_w, inner_h, border);
+    DEBUG_INFO(MODULE_VIDEO, "  Avail area:  w=%d h=%d (after controls=%d)", inner_w, avail_h, CONTROLS_HEIGHT);
+    DEBUG_INFO(MODULE_VIDEO, "  Video src:   %dx%d, fitted: %dx%d", _src_w, _src_h, fit_w, fit_h);
+    DEBUG_INFO(MODULE_VIDEO, "  Centering:   x_offset=%d, y_offset=%d", (inner_w - fit_w) / 2, (avail_h - fit_h) / 2);
+    DEBUG_INFO(MODULE_VIDEO, "  Video edges: left=%d right=%d top=%d bottom=%d",
+               _screen_x, _screen_x + _video_w, _screen_y, _screen_y + _video_h);
+    DEBUG_INFO(MODULE_VIDEO, "  Panel edges: left=%d right=%d top=%d bottom=%d",
+               inner_x, inner_x + inner_w, inner_y, inner_y + avail_h);
+    DEBUG_INFO(MODULE_VIDEO, "  SDL window:  x=%d y=%d (NOTE: Wayland always reports 0,0)", win_x, win_y);
+
+    /* Query display info from compositor */
+    {
+        /* Try wayland-info (works on Weston and wlroots) */
+        const char *cmds[] = {
+            "wayland-info 2>/dev/null | grep -A5 'interface: wl_output'",
+            "weston-info 2>/dev/null | grep -A5 'interface: wl_output'",
+            "wlr-randr 2>/dev/null",
+            NULL
+        };
+        for (int i = 0; cmds[i]; i++) {
+            FILE *cfp = popen(cmds[i], "r");
+            if (cfp) {
+                char line[256];
+                bool got_output = false;
+                while (fgets(line, sizeof(line), cfp)) {
+                    line[strcspn(line, "\n")] = 0;
+                    if (line[0]) {
+                        DEBUG_INFO(MODULE_VIDEO, "  display: %s", line);
+                        got_output = true;
+                    }
+                }
+                pclose(cfp);
+                if (got_output) break;  /* Use first tool that works */
+            }
+        }
+    }
 
     /* Set up parent layout — controls at bottom */
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
