@@ -31,13 +31,16 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 
 ### Video Playback
 - Tips > Visualize screen plays instructional video via external mpv subprocess
-- Custom minimal OSC (`minimal-osc.lua`): green-themed play/pause button + seekbar, always visible
-- Video stays on last frame when finished (`--keep-open=yes`)
+- Native LVGL controls: green-themed play/pause button + seekbar slider below video
+- Play button shows pause icon during playback, play icon when paused, rewind icon when video finishes
+- Seekbar updates in real-time (polled every 500ms via mpv IPC); drag to seek
+- Video layout: 6:1 grid ratio — Row 1 = video, Row 2 = controls (play button + seekbar)
+- Video stays on last frame when finished (`--keep-open=yes`); tap rewind to replay
 - Window dragging disabled (`--no-window-dragging`) to prevent accidental repositioning
 - Always-on-top enforced by `mpv-raise` systemd service using `wlr-foreign-toplevel-management` Wayland protocol
-- Explicit window positioning (`--geometry=WxH+X+Y`) centered within LVGL panel
-- mpv IPC socket (`/tmp/mpv-ipc`) for programmatic control from LVGL
-- Auto-detects video dimensions via ffprobe for aspect-ratio-correct sizing
+- Forced window positioning (`--force-window-position` + `--geometry=WxH+X+Y`)
+- mpv IPC socket (`/tmp/mpv-ipc`) for pause/seek/position polling from LVGL
+- Auto-detects video dimensions via ffprobe
 - Child process auto-terminates when parent app exits (PR_SET_PDEATHSIG)
 
 ### Player Names
@@ -109,7 +112,7 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 - **Sysroot**: A copy of the RPi5 filesystem at `rpi5-sysroot/` in the project root, containing at minimum:
   - `usr/include/` — kernel headers, gpiod.h, SDL2 headers
   - `usr/lib/` — libgpiod, libSDL2, libSDL2_mixer shared libraries and pkg-config files
-- **Target RPi packages** (installed on the Pi): `libsdl2-2.0-0`, `libsdl2-mixer-2.0-0`, `libgpiod2`, `mpv` (with Lua enabled for OSC)
+- **Target RPi packages** (installed on the Pi): `libsdl2-2.0-0`, `libsdl2-mixer-2.0-0`, `libgpiod2`, `mpv`
 
 ### CMake Build
 
@@ -157,7 +160,7 @@ cmake -B build -DSYSROOT_PATH=/path/to/rpi5-sysroot
 ### Deploy to Raspberry Pi
 
 ```bash
-scp build/SquareLine_Project q@<rpi-ip>:~/Desktop/SquareLine_Project/
+scp build/goball root@<rpi-ip>:/usr/bin/goball
 ```
 
 ### GPIO Test Simulator
@@ -209,6 +212,16 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 **Debug modules:** `MAIN`, `LVGL`, `UI`, `GAME`, `SOUND`, `LED`, `GPIO`, `INPUT`, `ANIMATION`, `LOGIC`, `HAL`, `VIDEO`
 
 ## Changelog
+
+### v1.6 — 03/06/2026
+- **Native LVGL video controls**: replaced mpv Lua OSC (`minimal-osc.lua`) with native LVGL play/pause button and seekbar slider, eliminating z-order and positioning issues with mpv's ASS overlay
+- **Play/Pause/Rewind button**: shows pause icon during playback, play icon when paused, rewind icon (`LV_SYMBOL_REFRESH`) when video reaches EOF; tap to restart from beginning
+- **Seekbar with IPC polling**: LVGL slider polls `percent-pos` every 500ms via mpv IPC socket; drag-to-seek with `absolute-percent` command
+- **Grid layout**: 6:1 row ratio — video fills top 6/7 of panel, controls occupy bottom 1/7 with play button (col 1) and seekbar (col 2)
+- **Forced window positioning**: added `--force-window-position` flag for mpv on Wayland/labwc
+- **Panel position tuning**: runtime adjustment of panel Y offset (-22px) and padding removal for tighter video-to-controls fit
+- **Removed redundant ontop IPC**: removed `set_property ontop true` from timer callback; `mpv-raise.service` is now the sole always-on-top enforcer
+- **mpv IPC property queries**: added `mpv_ipc_get_property_number()` and `mpv_ipc_get_property_bool()` for non-blocking property polling (percent-pos, pause, eof-reached)
 
 ### 03/05/2026
 - **Switched video player from ffplay to mpv**: replaced ffplay subprocess with mpv for video playback
