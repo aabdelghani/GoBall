@@ -30,10 +30,12 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 - Player turn highlighting patterns
 
 ### Video Playback
-- Tips > Visualize screen plays instructional video via external ffplay subprocess
-- Video overlaid on LVGL panel with always-on-top via labwc window rules
-- Seek slider and pause/resume controls rendered in LVGL below the video
-- Auto-detects video duration via ffprobe
+- Tips > Visualize screen plays instructional video via external mpv subprocess
+- mpv's built-in OSC (On-Screen Controller) provides pause, seek, and fullscreen controls
+- Video loops continuously (`--loop=yes`) until user navigates away
+- Always-on-top enforced by `mpv-raise` systemd service using `wlr-foreign-toplevel-management` Wayland protocol
+- mpv IPC socket (`/tmp/mpv-ipc`) for programmatic control from LVGL
+- Auto-detects video dimensions via ffprobe for aspect-ratio-correct sizing
 - Child process auto-terminates when parent app exits (PR_SET_PDEATHSIG)
 
 ### Player Names
@@ -71,7 +73,7 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 │   │   ├── game_modes.h        # Game mode enums
 │   │   └── player.h            # Player struct definition
 │   ├── game_sounds/            # WAV audio assets
-│   ├── game_videos/            # Video playback via ffplay subprocess
+│   ├── game_videos/            # Video playback via mpv subprocess
 │   ├── led_logic/              # WS2812 LED strip control
 │   ├── logic/                  # GPIO event handling, debounce, game flow
 │   ├── player_name/            # Editable player names with on-screen keyboard
@@ -90,7 +92,8 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 ├── tools/
 │   ├── goball_dashboard.py         # 5-tab development dashboard (deploy, GPIO, test, logs, config)
 │   ├── gpio_loopback_simulator.py  # GPIO test simulator
-│   └── install_requirements.sh     # Install dashboard dependencies
+│   ├── install_requirements.sh     # Install dashboard dependencies
+│   └── mpv-raise/                  # Wayland tool to keep mpv always on top (wlr-foreign-toplevel)
 ├── scripts/                    # Build and dependency scripts
 └── Dockerfile                  # Docker cross-compilation environment
 ```
@@ -104,7 +107,7 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 - **Sysroot**: A copy of the RPi5 filesystem at `rpi5-sysroot/` in the project root, containing at minimum:
   - `usr/include/` — kernel headers, gpiod.h, SDL2 headers
   - `usr/lib/` — libgpiod, libSDL2, libSDL2_mixer shared libraries and pkg-config files
-- **Target RPi packages** (installed on the Pi): `libsdl2-2.0-0`, `libsdl2-mixer-2.0-0`, `libgpiod2`
+- **Target RPi packages** (installed on the Pi): `libsdl2-2.0-0`, `libsdl2-mixer-2.0-0`, `libgpiod2`, `mpv` (with Lua enabled for OSC)
 
 ### CMake Build
 
@@ -204,6 +207,16 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 **Debug modules:** `MAIN`, `LVGL`, `UI`, `GAME`, `SOUND`, `LED`, `GPIO`, `INPUT`, `ANIMATION`, `LOGIC`, `HAL`, `VIDEO`
 
 ## Changelog
+
+### 03/05/2026
+- **Switched video player from ffplay to mpv**: replaced ffplay subprocess with mpv for video playback; mpv provides built-in OSC (On-Screen Controller) with pause, seek slider, and fullscreen controls — no custom LVGL controls needed
+- **mpv OSC requires Lua**: mpv rebuilt in Yocto image with `-Dlua=enabled` to support the on-screen controller script
+- **Video looping**: added `--loop=yes` flag so instructional video loops continuously until user navigates away
+- **Removed LVGL video controls**: removed custom pause button, seek slider, progress timer, and control bar — mpv's native OSC handles all playback interaction
+- **mpv IPC socket**: added `--input-ipc-server=/tmp/mpv-ipc` for programmatic control; ontop enforcer timer sends `set_property ontop true` every 500ms as fallback
+- **mpv-raise systemd service**: created `tools/mpv-raise/mpv-raise.c` — a Wayland client that uses the `wlr-foreign-toplevel-management` protocol to force-activate the mpv window every 500ms, ensuring it stays on top of the maximized goball window on labwc compositor
+- **Cross-compiled mpv-raise**: built `mpv-raise` for aarch64 using wayland-scanner-generated protocol bindings; deployed to `/usr/bin/mpv-raise` with systemd service at `/etc/systemd/system/mpv-raise.service`
+- **labwc config updates**: added mpv window rule with `ToggleAlwaysOnTop`, `ignoreFocusRequest`, `fixedPosition`; set `followMouse=yes` and `raiseOnFocus=no` to prevent click-to-raise from hiding mpv
 
 ### 03/01/2026
 - **Borderless window**: removed title bar from main application window via `SDL_SetWindowBordered`; window title set to "app"

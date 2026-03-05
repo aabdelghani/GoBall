@@ -96,6 +96,7 @@ This document covers:
 | Sensors | libgpiod + GPIO interrupts | Ball detection (4 scoring holes) |
 | Audio | SDL2_mixer | Voice announcements, sound effects |
 | LEDs | PIO + WS2812 protocol | Color-coded scoring feedback |
+| Video | mpv + mpv-raise (Wayland protocol) | Instructional video playback with always-on-top |
 | Build | CMake + aarch64 cross-compiler | Cross-compilation for RPi5 |
 
 \newpage
@@ -195,6 +196,12 @@ SquareLine_Project/
 |   +-- led_logic/                  LED strip subsystem
 |   |   +-- led_logic_event.h/c     PIO init, animations, flash effects
 |   |
+|   +-- game_videos/                Video playback module
+|   |   +-- game_videos.h/c         mpv subprocess spawn, IPC, ontop timer
+|   |
+|   +-- player_name/                Editable player names
+|   |   +-- player_name.h/c         Name storage, label registry, keyboard overlay
+|   |
 |   +-- ui_logic/                   UI event handlers
 |       +-- ui_logic.event.h/c      Button callbacks, screen transitions,
 |                                    game mode setup from UI selections
@@ -209,6 +216,10 @@ SquareLine_Project/
 +-- utils/
 |   +-- piolib/                     PIO library for WS2812 control
 |   +-- autostart/                  Kiosk mode desktop files
+|
++-- tools/
+|   +-- mpv-raise/                  Wayland always-on-top enforcer for mpv
+|       +-- mpv-raise.c             wlr-foreign-toplevel-management client
 |
 +-- lvgl/                           LVGL library source (v9)
 ```
@@ -667,7 +678,7 @@ The debug system provides configurable per-module logging with 5 severity levels
 
 Each log line is tagged with a module identifier for filtering:
 
-`MODULE_MAIN`, `MODULE_LVGL`, `MODULE_GPIO`, `MODULE_GAME`, `MODULE_SOUND`, `MODULE_LED`, `MODULE_UI`, `MODULE_HAL`, `MODULE_LOGIC`
+`MODULE_MAIN`, `MODULE_LVGL`, `MODULE_GPIO`, `MODULE_GAME`, `MODULE_SOUND`, `MODULE_LED`, `MODULE_UI`, `MODULE_HAL`, `MODULE_LOGIC`, `MODULE_VIDEO`
 
 ## Features
 
@@ -741,6 +752,8 @@ cmake -B build -DSYSROOT_PATH=/path/to/rpi5-sysroot
 | `libsdl2-2.0-0` | Display backend |
 | `libsdl2-mixer-2.0-0` | Audio playback |
 | `libgpiod2` | GPIO access |
+| `mpv` (with Lua) | Video playback with OSC |
+| `ffprobe` | Video dimension detection |
 
 ## Deployment
 
@@ -770,6 +783,9 @@ ssh q@<rpi-ip> './Desktop/SquareLine_Project/SquareLine_Project'
 | `modules/sound_logic/sound_logic_event.c` | ~200 | Audio init, WAV loading, timed playback |
 | `modules/led_logic/led_logic_event.c` | ~315 | PIO init, LED animation, flash effects |
 | `modules/debug/debug.c` | ~100 | Debug init, level config, formatted output |
+| `modules/game_videos/game_videos.c` | ~325 | mpv subprocess spawn, IPC socket, ontop timer |
+| `modules/player_name/player_name.c` | ~350 | Player name storage, label registry, keyboard overlay |
+| `tools/mpv-raise/mpv-raise.c` | ~200 | Wayland wlr-foreign-toplevel always-on-top enforcer |
 | `ui/ui.c` | ~7400 | SquareLine-generated screens and event wiring |
 
 # Appendix B: Enum Definitions

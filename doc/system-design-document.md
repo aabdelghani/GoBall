@@ -661,6 +661,91 @@ uint8_t scale_brightness(uint8_t color, uint8_t brightness) {
 
 Linear scaling. At `brightness=50` (default), a full-intensity channel (0xFF) outputs `(255 * 50) / 255 = 50`.
 
+## Video Module (`modules/game_videos/`)
+
+### Responsibilities
+
+- Spawn mpv subprocess for instructional video playback
+- Maintain IPC socket connection for programmatic control
+- Enforce always-on-top via periodic `set_property ontop true` commands
+- Detect mpv process exit and clean up resources
+- Fit video dimensions to LVGL panel with aspect ratio preservation
+
+### Architecture
+
+```
+game_video_play()
+    |
+    +-> get_video_dimensions() via ffprobe
+    +-> Calculate fit size (aspect ratio preserved)
+    +-> spawn_mpv()
+    |       +-> fork()
+    |       +-> prctl(PR_SET_PDEATHSIG, SIGTERM)
+    |       +-> execlp("mpv", "--no-border", "--ontop",
+    |                   "--loop=yes", "--osc=yes",
+    |                   "--input-ipc-server=/tmp/mpv-ipc",
+    |                   "--geometry=WxH", "--really-quiet",
+    |                   video_path)
+    |
+    +-> Start ontop enforcer timer (500ms)
+            +-> Sends {"command":["set_property","ontop",true]}
+            +-> Detects mpv exit via waitpid(WNOHANG)
+```
+
+### IPC Socket Design
+
+mpv's JSON IPC protocol over Unix domain socket:
+
+```c
+#define MPV_IPC_PATH "/tmp/mpv-ipc"
+
+// Non-blocking connection to avoid stalling LVGL thread
+fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
+
+// Command format (newline-terminated JSON)
+mpv_ipc_send("{\"command\":[\"set_property\",\"ontop\",true]}\n");
+```
+
+The IPC socket is used as a fallback for ontop enforcement. The primary always-on-top mechanism is the external `mpv-raise` service (see below).
+
+### Always-On-Top Strategy
+
+Three complementary mechanisms ensure mpv stays visible:
+
+| Level | Mechanism | Reliability |
+|-------|-----------|-------------|
+| 1. Client hint | mpv `--ontop` flag | Compositor may ignore |
+| 2. Window rule | labwc `ToggleAlwaysOnTop` | Buggy with maximized windows |
+| 3. Protocol-level | `mpv-raise` service via `wlr-foreign-toplevel-management` | Reliable — compositor-level activate |
+
+The `mpv-raise` tool (`tools/mpv-raise/mpv-raise.c`) connects to Wayland, discovers the mpv window by `app_id`, and calls `zwlr_foreign_toplevel_handle_v1_activate()` every 500ms. It runs as a systemd service (`mpv-raise.service`) alongside the compositor.
+
+### Interface
+
+```c
+void game_video_play(lv_obj_t *parent, const char *video_path,
+                     game_video_back_cb_t back_cb);
+void game_video_stop(void);
+bool game_video_is_playing(void);
+void game_video_prepare(void);
+void game_video_handle_draw(lv_obj_t *panel, const char *video_path,
+                            game_video_back_cb_t back_cb);
+```
+
+### Deferred Start Pattern
+
+Video playback is triggered on first draw of the panel widget, not on screen load. This ensures the panel has valid coordinates for positioning:
+
+```
+game_video_prepare()  →  sets _video_started = false
+    |
+Screen loads, panel draws  →  game_video_handle_draw()
+    |
+First draw only  →  lv_async_call(_deferred_play)
+    |
+_deferred_play()  →  game_video_play(panel, path, back_cb)
+```
+
 ## Debug Module (`modules/debug/`)
 
 ### Log Level Hierarchy
@@ -698,7 +783,7 @@ In Release builds (`DEBUG_LEVEL=2`), `DEBUG_INFO`, `DEBUG_DEBUG`, and `DEBUG_TRA
 typedef enum {
     MODULE_MAIN, MODULE_LVGL, MODULE_UI, MODULE_GAME,
     MODULE_SOUND, MODULE_LED, MODULE_GPIO, MODULE_INPUT,
-    MODULE_ANIMATION, MODULE_LOGIC, MODULE_HAL,
+    MODULE_ANIMATION, MODULE_LOGIC, MODULE_HAL, MODULE_VIDEO,
     MODULE_COUNT
 } debug_module_t;
 ```
@@ -829,6 +914,13 @@ pio_sm_xfer_data(pio, sm, PIO_DIR_TO_SM, sizeof(databuf), databuf);
 | `trigger_flash_with_color()` | led\_logic | game modes | LED flash effect |
 | `play_sound_once()` | sound\_logic | gpio\_event | Delayed sound playback |
 | `check_all_players_completed()` | gpio\_event | gpio\_event | End-of-game detection |
+| `game_video_play()` | game\_videos | ui\_logic | Start mpv video playback |
+| `game_video_stop()` | game\_videos | ui\_logic | Stop and clean up video |
+| `game_video_prepare()` | game\_videos | ui\_logic | Reset start flag for draw trigger |
+| `game_video_handle_draw()` | game\_videos | ui\_logic | Deferred start on first draw |
+| `player_name_init()` | player\_name | main | Register all name labels |
+| `player_name_reset()` | player\_name | ui\_logic | Reset names to defaults |
+| `player_name_get()` | player\_name | gpio\_event | Get custom player name |
 
 \newpage
 
