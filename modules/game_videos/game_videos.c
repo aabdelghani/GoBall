@@ -37,7 +37,7 @@ static const char *_pending_video_path = NULL;
 static game_video_back_cb_t _pending_back_cb = NULL;
 
 /* Height reserved for the LVGL controls area */
-#define CONTROLS_HEIGHT 85
+#define CONTROLS_HEIGHT 40
 
 /* ── helpers ──────────────────────────────────────────── */
 
@@ -287,10 +287,19 @@ void game_video_play(lv_obj_t *parent, const char *video_path,
     DEBUG_DEBUG(MODULE_VIDEO, "Panel: pos(%d,%d) size(%dx%d), controls_height=%d",
                 panel_x, panel_y, panel_w, panel_h, CONTROLS_HEIGHT);
 
-    _screen_x = 500;
-    _screen_y = 69;
-    _video_w = panel_w;
-    _video_h = panel_h - CONTROLS_HEIGHT;
+    /* Panel inner area: 1296x528 at (632, 96) on 2560x720 display
+     * Video source: 360x640 (9:16 portrait)
+     * Leave CONTROLS_HEIGHT (40px) at bottom for pause/seek bar
+     * Video area: 1296 x 488, video fitted to height maintaining aspect ratio */
+    int inner_x = 632, inner_y = 96;
+    int inner_w = 1296;
+    int avail_h = 528 - CONTROLS_HEIGHT;  /* 488px */
+    int fit_w = avail_h * 360 / 640;      /* 274px */
+
+    _screen_x = inner_x + (inner_w - fit_w) / 2;  /* 1143 */
+    _screen_y = inner_y;                            /* 96 */
+    _video_w = fit_w;                               /* 274 */
+    _video_h = avail_h;                             /* 488 */
 
     DEBUG_INFO(MODULE_VIDEO, "Video rect: screen(%d,%d) size(%dx%d)",
                _screen_x, _screen_y, _video_w, _video_h);
