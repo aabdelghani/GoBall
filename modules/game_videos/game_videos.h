@@ -7,8 +7,10 @@
 /* Video file paths — add new videos here */
 #ifdef YOCTO_BUILD
 #define GAME_VIDEO_VISUALIZE_TIP "/opt/goball/videos/visualize_tip.mp4"
+#define GAME_VIDEO_OSC_SCRIPT    "/opt/goball/scripts/minimal-osc.lua"
 #else
 #define GAME_VIDEO_VISUALIZE_TIP "modules/game_videos/visualize_tip.mp4"
+#define GAME_VIDEO_OSC_SCRIPT    "modules/game_videos/minimal-osc.lua"
 #endif
 
 /* Callback invoked when user presses Back on video controls */

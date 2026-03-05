@@ -31,9 +31,11 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 
 ### Video Playback
 - Tips > Visualize screen plays instructional video via external mpv subprocess
-- mpv's built-in OSC (On-Screen Controller) provides pause, seek, and fullscreen controls
-- Video loops continuously (`--loop=yes`) until user navigates away
+- Custom minimal OSC (`minimal-osc.lua`): green-themed play/pause button + seekbar, always visible
+- Video stays on last frame when finished (`--keep-open=yes`)
+- Window dragging disabled (`--no-window-dragging`) to prevent accidental repositioning
 - Always-on-top enforced by `mpv-raise` systemd service using `wlr-foreign-toplevel-management` Wayland protocol
+- Explicit window positioning (`--geometry=WxH+X+Y`) centered within LVGL panel
 - mpv IPC socket (`/tmp/mpv-ipc`) for programmatic control from LVGL
 - Auto-detects video dimensions via ffprobe for aspect-ratio-correct sizing
 - Child process auto-terminates when parent app exits (PR_SET_PDEATHSIG)
@@ -209,10 +211,13 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 ## Changelog
 
 ### 03/05/2026
-- **Switched video player from ffplay to mpv**: replaced ffplay subprocess with mpv for video playback; mpv provides built-in OSC (On-Screen Controller) with pause, seek slider, and fullscreen controls — no custom LVGL controls needed
+- **Switched video player from ffplay to mpv**: replaced ffplay subprocess with mpv for video playback
+- **Custom minimal OSC**: created `minimal-osc.lua` — green-themed (#00F46A) on-screen controller with play/pause button and seekbar; always visible (no auto-hide); uses ASS drawing on mpv OSD overlay
 - **mpv OSC requires Lua**: mpv rebuilt in Yocto image with `-Dlua=enabled` to support the on-screen controller script
-- **Video looping**: added `--loop=yes` flag so instructional video loops continuously until user navigates away
-- **Removed LVGL video controls**: removed custom pause button, seek slider, progress timer, and control bar — mpv's native OSC handles all playback interaction
+- **Keep-open on finish**: video stays on last frame (`--keep-open=yes`) instead of closing when playback ends
+- **No window dragging**: added `--no-window-dragging` to prevent accidental repositioning via click-and-drag
+- **Explicit window positioning**: geometry now includes position (`--geometry=WxH+X+Y`), centered within LVGL panel inner area
+- **Removed LVGL video controls**: removed custom pause button, seek slider, progress timer, and control bar — custom Lua OSC handles all playback interaction
 - **mpv IPC socket**: added `--input-ipc-server=/tmp/mpv-ipc` for programmatic control; ontop enforcer timer sends `set_property ontop true` every 500ms as fallback
 - **mpv-raise systemd service**: created `tools/mpv-raise/mpv-raise.c` — a Wayland client that uses the `wlr-foreign-toplevel-management` protocol to force-activate the mpv window every 500ms, ensuring it stays on top of the maximized goball window on labwc compositor
 - **Cross-compiled mpv-raise**: built `mpv-raise` for aarch64 using wayland-scanner-generated protocol bindings; deployed to `/usr/bin/mpv-raise` with systemd service at `/etc/systemd/system/mpv-raise.service`

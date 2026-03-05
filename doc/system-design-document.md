@@ -666,10 +666,12 @@ Linear scaling. At `brightness=50` (default), a full-intensity channel (0xFF) ou
 ### Responsibilities
 
 - Spawn mpv subprocess for instructional video playback
+- Custom minimal OSC (`minimal-osc.lua`) with green-themed play/pause + seekbar
 - Maintain IPC socket connection for programmatic control
 - Enforce always-on-top via periodic `set_property ontop true` commands
 - Detect mpv process exit and clean up resources
 - Fit video dimensions to LVGL panel with aspect ratio preservation
+- Center video window within panel using explicit positioning
 
 ### Architecture
 
@@ -678,19 +680,31 @@ game_video_play()
     |
     +-> get_video_dimensions() via ffprobe
     +-> Calculate fit size (aspect ratio preserved)
+    +-> Calculate position (centered in panel inner area)
     +-> spawn_mpv()
     |       +-> fork()
     |       +-> prctl(PR_SET_PDEATHSIG, SIGTERM)
     |       +-> execlp("mpv", "--no-border", "--ontop",
-    |                   "--loop=yes", "--osc=yes",
+    |                   "--no-osc", "--keep-open=yes",
+    |                   "--no-window-dragging",
+    |                   "--script=minimal-osc.lua",
     |                   "--input-ipc-server=/tmp/mpv-ipc",
-    |                   "--geometry=WxH", "--really-quiet",
+    |                   "--geometry=WxH+X+Y",
     |                   video_path)
     |
     +-> Start ontop enforcer timer (500ms)
             +-> Sends {"command":["set_property","ontop",true]}
             +-> Detects mpv exit via waitpid(WNOHANG)
 ```
+
+### Custom OSC (`minimal-osc.lua`)
+
+Green-themed (#00F46A) on-screen controller drawn via ASS overlay:
+- Play/pause button (triangle/bars) + seekbar with knob
+- Always visible (no auto-hide, no hover trigger)
+- Renders every 250ms to update seekbar position
+- Click handler: tap video to toggle pause, tap seekbar to seek
+- Coordinates relative to video content area using `osd-dimensions` margins
 
 ### IPC Socket Design
 

@@ -26,6 +26,7 @@ static lv_timer_t          *_ontop_timer    = NULL;
 /* Playback state */
 static const char *_video_path = NULL;
 static int         _video_w = 0, _video_h = 0;
+static int         _video_x = 0, _video_y = 0;
 
 /* Deferred-start flag for handle_draw */
 static bool _video_started = false;
@@ -158,15 +159,18 @@ static void spawn_mpv(void)
     {
         prctl(PR_SET_PDEATHSIG, SIGTERM);
 
-        char geom_arg[48];
-        snprintf(geom_arg, sizeof(geom_arg), "--geometry=%dx%d", _video_w, _video_h);
+        char geom_arg[64];
+        snprintf(geom_arg, sizeof(geom_arg), "--geometry=%dx%d+%d+%d",
+                 _video_w, _video_h, _video_x, _video_y);
 
         execlp("mpv", "mpv",
                "--no-border", "--ontop",
-               "--loop=yes", "--osc=yes",
+               "--no-osc", "--keep-open=yes",
+               "--no-window-dragging",
+               "--script=" GAME_VIDEO_OSC_SCRIPT,
                "--input-ipc-server=" MPV_IPC_PATH,
                geom_arg,
-               "--really-quiet",
+               "--msg-level=all=no,minimal-osc=info",
                _video_path, NULL);
 
         fprintf(stderr, "[VIDEO] ERROR: execlp(mpv) failed: %s\n", strerror(errno));
@@ -226,8 +230,14 @@ void game_video_play(lv_obj_t *parent, const char *video_path, game_video_back_c
     _video_w = fit_w;
     _video_h = fit_h;
 
-    DEBUG_INFO(MODULE_VIDEO, "Video: size(%dx%d) panel(%dx%d) src(%dx%d)",
-               _video_w, _video_h, panel_w, panel_h, _src_w, _src_h);
+    /* Center video within panel inner area */
+    _video_x = panel_area.x1 + border + (inner_w - fit_w) / 2;
+    _video_y = panel_area.y1 + border + (inner_h - fit_h) / 2;
+
+    DEBUG_INFO(MODULE_VIDEO, "Video: size(%dx%d) pos(%d,%d) panel(%dx%d@%d,%d) inner(%dx%d) src(%dx%d)",
+               _video_w, _video_h, _video_x, _video_y,
+               panel_w, panel_h, panel_area.x1, panel_area.y1,
+               inner_w, inner_h, _src_w, _src_h);
 
     spawn_mpv();
 
