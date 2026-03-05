@@ -123,7 +123,7 @@ static void spawn_ffplay(double start_sec)
                    "-x", width_s, "-y", height_s,
                    "-left", left_s, "-top", top_s,
                    "-ss", ss_s,
-                   "-loop", "0",
+                   "-autoexit",
                    "-loglevel", "quiet",
                    _video_path, NULL);
         } else {
@@ -131,7 +131,7 @@ static void spawn_ffplay(double start_sec)
                    "-noborder", "-alwaysontop",
                    "-x", width_s, "-y", height_s,
                    "-left", left_s, "-top", top_s,
-                   "-loop", "0",
+                   "-autoexit",
                    "-loglevel", "quiet",
                    _video_path, NULL);
         }
