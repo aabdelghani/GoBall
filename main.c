@@ -18,6 +18,7 @@
 #include "modules/sound_logic/sound_logic_event.h"
 #include "modules/ui_logic/ui_logic.event.h"
 #include "modules/player_name/player_name.h"
+#include "modules/wifi_manager/wifi_manager.h"
 #include "ui/ui.h"
 /*********************
  *      DEFINES
@@ -94,6 +95,7 @@ int main(int argc, char **argv)
     DEBUG_INFO(MODULE_UI, "UI initialized successfully");
 
     player_name_init();
+    wifi_manager_init();
 
     /*My Custom Logic */
     struct gpiod_line_bulk  event_lines;
