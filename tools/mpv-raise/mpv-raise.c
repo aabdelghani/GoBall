@@ -179,7 +179,7 @@ int main(void)
     /* Initial roundtrip to discover existing toplevels */
     wl_display_roundtrip(display);
 
-    fprintf(stderr, "mpv-raise: running (activate mpv every 500ms)\n");
+    fprintf(stderr, "mpv-raise: running (activate mpv every 100ms)\n");
 
     while (1)
     {
@@ -192,7 +192,7 @@ int main(void)
             wl_display_flush(display);
         }
 
-        usleep(500000); /* 500ms */
+        usleep(100000); /* 100ms */
     }
 
     wl_display_disconnect(display);

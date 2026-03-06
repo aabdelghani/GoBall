@@ -49,6 +49,17 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 - Names reset to defaults ("Player 1"–"Player 4") when returning to main menu
 - Dynamic turn display labels also use custom names
 
+### WiFi Manager
+- Tap the G hexagon logo on the home screen to open WiFi network selector
+- Scans available networks via NetworkManager (`nmcli`) with signal strength and security info
+- Scrollable network list sorted by signal strength with green scrollbar
+- Connected network highlighted with green border and checkmark icon at top of list
+- Password entry via on-screen LVGL keyboard with password masking
+- Back button to return from password entry to network list
+- Disconnect button (red) to drop current connection and switch networks
+- WiFi status icon in bottom-right corner: green when connected, red when disconnected
+- Auto-polling every 5 seconds to update connection status
+
 ### UI
 - Built with LVGL and SquareLine Studio
 - Automatic screen transitions to scorecard on game completion
@@ -83,6 +94,7 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 │   ├── logic/                  # GPIO event handling, debounce, game flow
 │   ├── player_name/            # Editable player names with on-screen keyboard
 │   ├── sound_logic/            # SDL2_mixer audio system
+│   ├── wifi_manager/           # WiFi network scanning, connection, and status
 │   └── ui_logic/               # UI event handlers
 ├── ui/                         # LVGL UI (exported from SquareLine Studio)
 │   ├── screens/                # All game screens
@@ -212,6 +224,16 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 **Debug modules:** `MAIN`, `LVGL`, `UI`, `GAME`, `SOUND`, `LED`, `GPIO`, `INPUT`, `ANIMATION`, `LOGIC`, `HAL`, `VIDEO`
 
 ## Changelog
+
+### v1.7.0 — 03/06/2026
+- **WiFi network manager**: tap the G hexagon logo on the home screen to scan, select, and connect to WiFi networks via touchscreen UI
+- **Network scanning**: uses `nmcli` to list available networks with SSID, signal strength percentage, and security type; deduplicates SSIDs keeping strongest signal
+- **Password entry**: on-screen LVGL keyboard with password masking, dark-themed keys matching player name keyboard style
+- **Connection status**: current connected network shown at top of list with green border and checkmark; auto-polls every 5 seconds
+- **WiFi status icon**: bottom-right corner of home screen — green WiFi symbol when connected, red when disconnected
+- **Disconnect support**: red disconnect button when connected, allowing users to switch networks
+- **Back button**: 140px-wide back button on password dialog to return to network list without connecting
+- **Overlay pattern**: reuses `lv_layer_top()` dark overlay from player name module; tap background or close button to dismiss
 
 ### v1.6 — 03/06/2026
 - **Native LVGL video controls**: replaced mpv Lua OSC (`minimal-osc.lua`) with native LVGL play/pause button and seekbar slider, eliminating z-order and positioning issues with mpv's ASS overlay
