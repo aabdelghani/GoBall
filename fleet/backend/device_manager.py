@@ -27,6 +27,7 @@ class DeviceManager:
     def __init__(self, db_path: str = "./data/fleet.db"):
         self.devices: dict[str, DeviceState] = {}
         self.alerts: list[Alert] = []
+        self.removed_serials: set[str] = set()  # Ignore MQTT re-adds for removed devices
         self.db_path = db_path
         self._db: Optional[aiosqlite.Connection] = None
 
@@ -75,13 +76,17 @@ class DeviceManager:
         if self._db:
             await self._db.close()
 
-    def get_or_create(self, serial: str) -> DeviceState:
+    def get_or_create(self, serial: str) -> DeviceState | None:
+        if serial in self.removed_serials:
+            return None
         if serial not in self.devices:
             self.devices[serial] = DeviceState(serial=serial)
         return self.devices[serial]
 
     async def update_status(self, serial: str, status_str: str):
         dev = self.get_or_create(serial)
+        if not dev:
+            return
         dev.status = DeviceStatus(status_str)
         dev.last_seen = time.time()
         if status_str == "offline":
@@ -93,6 +98,8 @@ class DeviceManager:
 
     async def update_system(self, serial: str, data: dict):
         dev = self.get_or_create(serial)
+        if not dev:
+            return
         dev.system = SystemMetrics(**data)
         dev.status = DeviceStatus.ONLINE
         dev.last_seen = time.time()
@@ -109,6 +116,8 @@ class DeviceManager:
 
     async def update_game_state(self, serial: str, data: dict):
         dev = self.get_or_create(serial)
+        if not dev:
+            return
         dev.game = GameState(
             mode=GameMode(data.get("mode", "idle")),
             player_count=data.get("player_count", 0),
@@ -120,11 +129,15 @@ class DeviceManager:
 
     async def update_hardware(self, serial: str, data: dict):
         dev = self.get_or_create(serial)
+        if not dev:
+            return
         dev.hardware = HardwareState(**data)
         dev.last_seen = time.time()
 
     async def add_error(self, serial: str, data: dict):
         dev = self.get_or_create(serial)
+        if not dev:
+            return
         msg = data.get("message", str(data))
         dev.errors.append(msg)
         if len(dev.errors) > 50:
@@ -288,6 +301,36 @@ class DeviceManager:
             "total_errors": total_errors,
             "active_alerts": len(self.alerts),
         }
+
+    async def remove_device(self, serial: str):
+        """Remove a device entirely (memory + DB). Blocks MQTT re-adds."""
+        self.devices.pop(serial, None)
+        self.alerts = [a for a in self.alerts if a.serial != serial]
+        self.removed_serials.add(serial)
+        if self._db:
+            await self._db.execute("DELETE FROM devices WHERE serial = ?", (serial,))
+            await self._db.execute("DELETE FROM events WHERE serial = ?", (serial,))
+            await self._db.execute("DELETE FROM error_logs WHERE serial = ?", (serial,))
+            await self._db.commit()
+
+    async def clear_device_errors(self, serial: str):
+        """Clear in-memory errors for a device (DB records preserved)."""
+        dev = self.devices.get(serial)
+        if dev:
+            dev.errors.clear()
+
+    async def clear_device_alerts(self, serial: str):
+        """Clear alerts for a device (DB records preserved)."""
+        self.alerts = [a for a in self.alerts if a.serial != serial]
+
+    async def clear_device_logs(self, serial: str):
+        """Delete error logs for a device from the database."""
+        if self._db:
+            await self._db.execute("DELETE FROM error_logs WHERE serial = ?", (serial,))
+            await self._db.commit()
+        dev = self.devices.get(serial)
+        if dev:
+            dev.errors.clear()
 
     async def get_error_logs(self, serial: str | None = None, limit: int = 200) -> list[dict]:
         """Get error logs. If serial is None, return all devices collectively."""

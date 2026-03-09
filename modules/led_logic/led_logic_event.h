@@ -55,6 +55,10 @@ extern led_strip_controller_t leds;
 led_strip_controller_t init_led_controller(uint8_t default_gpio1, uint8_t default_gpio2, int argc,
                                            char** argv);
 
+// LED thread (runs on core 3, owns all PIO transfers)
+void led_start_thread(led_strip_controller_t* controller);
+void led_stop_thread(void);
+
 // Brightness Control
 void    set_brightness(led_strip_controller_t* controller, uint8_t value);
 uint8_t scale_brightness(uint8_t color, uint8_t brightness);

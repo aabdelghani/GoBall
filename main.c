@@ -97,6 +97,18 @@ int main(int argc, char **argv)
     player_name_init();
     wifi_manager_init();
 
+    /* Version label on home screen (bottom-right) */
+    {
+        lv_obj_t *ver_label = lv_label_create(ui_HScreen);
+        lv_label_set_text(ver_label, "v" GOBALL_VERSION);
+        lv_obj_set_style_text_color(ver_label, lv_color_hex(0xAAAAAAu), LV_PART_MAIN);
+        lv_obj_set_style_text_font(ver_label, &lv_font_montserrat_14, LV_PART_MAIN);
+        lv_obj_align(ver_label, LV_ALIGN_BOTTOM_RIGHT, -40, -10);
+    }
+
+    /* Override firmware version on Update screen */
+    lv_label_set_text(ui_UFSFVNText, "v" GOBALL_VERSION);
+
     /*My Custom Logic */
     struct gpiod_line_bulk  event_lines;
     struct gpiod_line_event event;
@@ -132,12 +144,14 @@ int main(int argc, char **argv)
 
     /* Initialize LED System */
     DEBUG_TRACE(MODULE_LED, "#7 Initializing LED controller");
-    // Remove the local 'leds' declaration and keep only initialization:
-    leds = init_led_controller(3, 2, argc, argv);  // Uses the global variable
+    leds = init_led_controller(3, 2, argc, argv);
     DEBUG_INFO(MODULE_LED, "LED controller initialized");
 
-    set_brightness(&leds, 50);  // Medium brightness 0 - 255 brightness
+    set_brightness(&leds, 50);
     DEBUG_INFO(MODULE_LED, "LED brightness set to 50");
+
+    /* Start LED thread on core 3 (keeps PIO transfers off the main/LVGL thread) */
+    led_start_thread(&leds);
 
     DEBUG_INFO(MODULE_MAIN, "#8 Entering main loop");
 

@@ -208,6 +208,10 @@ document.addEventListener('alpine:init', () => {
                     this.alerts = msg.alerts;
                 } else if (msg.type === 'device_update') {
                     this.handleDeviceUpdate(msg);
+                } else if (msg.type === 'device_removed') {
+                    this.devices = this.devices.filter(d => d.serial !== msg.serial);
+                    this.alerts = this.alerts.filter(a => a.serial !== msg.serial);
+                    if (this.selectedDevice === msg.serial) this.closeDetail();
                 }
             };
         },
@@ -488,6 +492,36 @@ document.addEventListener('alpine:init', () => {
             } finally {
                 this.fwUploading = false;
             }
+        },
+
+        // --- Remove device ---
+        async removeDevice(serial) {
+            if (!confirm(`Remove device ${serial}? This deletes all its data.`)) return;
+            await fetch(`/api/devices/${serial}`, { method: 'DELETE' });
+            this.devices = this.devices.filter(d => d.serial !== serial);
+            this.alerts = this.alerts.filter(a => a.serial !== serial);
+            if (this.selectedDevice === serial) this.closeDetail();
+        },
+
+        // --- Clear actions ---
+        async clearErrors(serial) {
+            await fetch(`/api/devices/${serial}/errors`, { method: 'DELETE' });
+            if (this.selectedDetail) this.selectedDetail.error_count = 0;
+            const dev = this.devices.find(d => d.serial === serial);
+            if (dev) dev.error_count = 0;
+        },
+
+        async clearAlerts(serial) {
+            await fetch(`/api/devices/${serial}/alerts`, { method: 'DELETE' });
+            this.alerts = this.alerts.filter(a => a.serial !== serial);
+        },
+
+        async clearLogs(serial) {
+            if (!confirm('Delete all error logs for this device? This cannot be undone.')) return;
+            await fetch(`/api/devices/${serial}/logs`, { method: 'DELETE' });
+            if (this.selectedDetail) this.selectedDetail.error_count = 0;
+            const dev = this.devices.find(d => d.serial === serial);
+            if (dev) dev.error_count = 0;
         },
 
         // --- Helpers ---

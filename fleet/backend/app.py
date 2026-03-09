@@ -106,6 +106,38 @@ async def get_device_logs(serial: str, limit: int = 200):
     return await dm.get_error_logs(serial=serial, limit=limit)
 
 
+@app.delete("/api/devices/{serial}")
+async def remove_device(serial: str):
+    """Remove a device entirely and clear retained MQTT messages."""
+    await dm.remove_device(serial)
+    # Clear retained MQTT topics so device doesn't reappear on restart
+    for topic in ["status", "system", "game/state", "hardware", "errors"]:
+        mqtt.client.publish(f"goball/{serial}/{topic}", b"", qos=1, retain=True)
+    await ws_mgr.broadcast({"type": "device_removed", "serial": serial})
+    return {"ok": True}
+
+
+@app.delete("/api/devices/{serial}/errors")
+async def clear_device_errors(serial: str):
+    """Clear in-memory errors for a device."""
+    await dm.clear_device_errors(serial)
+    return {"ok": True}
+
+
+@app.delete("/api/devices/{serial}/alerts")
+async def clear_device_alerts(serial: str):
+    """Clear alerts for a device."""
+    await dm.clear_device_alerts(serial)
+    return {"ok": True}
+
+
+@app.delete("/api/devices/{serial}/logs")
+async def clear_device_logs(serial: str):
+    """Clear error logs for a device from the database."""
+    await dm.clear_device_logs(serial)
+    return {"ok": True}
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
     await ws_mgr.connect(ws)

@@ -11,6 +11,12 @@ set(CMAKE_CXX_STANDARD 11)
 
 project(goball C)
 
+# Version — single source of truth from VERSION file
+file(STRINGS "${PROJECT_SOURCE_DIR}/VERSION" GOBALL_VERSION_RAW)
+string(STRIP "${GOBALL_VERSION_RAW}" GOBALL_VERSION)
+add_compile_definitions(GOBALL_VERSION="${GOBALL_VERSION}")
+message(STATUS "GoBall version: ${GOBALL_VERSION}")
+
 if(YOCTO_BUILD)
     add_compile_definitions(YOCTO_BUILD=1)
 endif()
@@ -130,11 +136,12 @@ if(NOT YOCTO_BUILD)
     )
 endif()
 
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME}
     SDL2
     SDL2_mixer
     pio
     ${LIBGPIOD_LIBRARIES}
+    pthread
     m  # Add math library for debug timestamps if needed
 )
 

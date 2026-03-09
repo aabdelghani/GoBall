@@ -53,6 +53,9 @@ class MQTTClient:
         client.subscribe("goball/#", qos=1)
 
     def _on_message(self, client, userdata, msg: mqtt.MQTTMessage):
+        # Ignore empty retained messages (cleared topics)
+        if not msg.payload:
+            return
         m = TOPIC_RE.match(msg.topic)
         if not m:
             return

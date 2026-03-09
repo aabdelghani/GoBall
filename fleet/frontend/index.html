@@ -239,7 +239,10 @@
                                     <div @click="selectDevice(d.serial)" class="bg-slate-800 border rounded-lg p-3 cursor-pointer card-hover transition-all duration-200" :class="cardBorder(d)">
                                         <div class="flex items-center justify-between mb-2">
                                             <span class="font-mono text-sm text-slate-200 truncate" x-text="d.hostname || d.serial.slice(-8)"></span>
-                                            <span class="text-lg" :class="statusDot(d.status)" x-text="d.status === 'online' ? '●' : '○'"></span>
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-lg" :class="statusDot(d.status)" x-text="d.status === 'online' ? '●' : '○'"></span>
+                                                <button @click.stop="removeDevice(d.serial)" class="text-slate-600 hover:text-red-400 text-sm transition-colors" title="Remove device">&times;</button>
+                                            </div>
                                         </div>
                                         <div class="text-xs text-slate-400 space-y-0.5">
                                             <div class="flex justify-between">
@@ -604,6 +607,20 @@
                                 :disabled="selectedDetail.status !== 'online'"
                                 class="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
                                 Update Firmware
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <button @click="clearErrors(selectedDetail.serial)"
+                                class="px-3 py-1.5 bg-slate-700 hover:bg-red-700 text-slate-300 hover:text-white text-xs rounded-lg transition-colors border border-slate-600">
+                                Clear Errors
+                            </button>
+                            <button @click="clearAlerts(selectedDetail.serial)"
+                                class="px-3 py-1.5 bg-slate-700 hover:bg-orange-700 text-slate-300 hover:text-white text-xs rounded-lg transition-colors border border-slate-600">
+                                Clear Alerts
+                            </button>
+                            <button @click="clearLogs(selectedDetail.serial)"
+                                class="px-3 py-1.5 bg-slate-700 hover:bg-red-800 text-slate-300 hover:text-white text-xs rounded-lg transition-colors border border-slate-600">
+                                Clear Logs
                             </button>
                         </div>
                         <div x-show="cmdResult" x-transition class="mt-3 text-xs p-2 rounded"
