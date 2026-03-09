@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoBall Fleet Error Logs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body { background: #0f172a; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    </style>
+</head>
+<body x-data="logsPage" class="min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+        <div class="flex items-center gap-3">
+            <a href="/" class="text-slate-400 hover:text-white transition-colors">&larr; Dashboard</a>
+            <h1 class="text-xl font-semibold text-white">Error Logs</h1>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+            <span class="px-3 py-1 rounded-full bg-slate-700">
+                <span x-text="logs.length"></span> entries
+            </span>
+            <span class="w-2 h-2 rounded-full" :class="wsConnected ? 'bg-green-400' : 'bg-red-400'"></span>
+        </div>
+    </header>
+
+    <!-- Controls -->
+    <div class="bg-slate-800/50 border-b border-slate-700 px-6 py-3 flex items-center gap-4 flex-wrap">
+        <!-- View toggle -->
+        <div class="flex rounded-lg overflow-hidden border border-slate-600">
+            <button @click="viewMode = 'all'; loadLogs()"
+                :class="viewMode === 'all' ? 'bg-slate-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'"
+                class="px-4 py-1.5 text-sm transition-colors">All Devices</button>
+            <button @click="viewMode = 'device'; loadLogs()"
+                :class="viewMode === 'device' ? 'bg-slate-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'"
+                class="px-4 py-1.5 text-sm transition-colors border-l border-slate-600">Per Device</button>
+        </div>
+
+        <!-- Device selector (visible in per-device mode) -->
+        <div x-show="viewMode === 'device'" class="flex items-center gap-2">
+            <label class="text-xs uppercase text-slate-400 font-semibold">Device:</label>
+            <select x-model="selectedSerial" @change="loadLogs()"
+                class="bg-slate-700 border border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500">
+                <option value="">-- Select --</option>
+                <template x-for="d in devices" :key="d.serial">
+                    <option :value="d.serial" x-text="(d.hostname || d.serial.slice(-8)) + ' (' + d.serial.slice(-8) + ')'"></option>
+                </template>
+            </select>
+        </div>
+
+        <!-- Search -->
+        <div class="ml-auto">
+            <input x-model="search" type="text" placeholder="Search messages..."
+                class="bg-slate-700 border border-slate-600 rounded px-3 py-1.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 w-64">
+        </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="p-6">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-slate-700 text-left text-xs uppercase text-slate-400 tracking-wider">
+                        <th class="px-4 py-3 w-48">Time</th>
+                        <th class="px-4 py-3 w-44" x-show="viewMode === 'all'">Device</th>
+                        <th class="px-4 py-3">Error Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="(entry, i) in filteredLogs" :key="i">
+                        <tr class="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
+                            <td class="px-4 py-3 text-slate-300 whitespace-nowrap">
+                                <div x-text="formatTime(entry.ts)"></div>
+                                <div class="text-xs text-slate-500" x-text="formatAge(entry.ts)"></div>
+                            </td>
+                            <td class="px-4 py-3" x-show="viewMode === 'all'">
+                                <button @click="viewMode = 'device'; selectedSerial = entry.serial; loadLogs()"
+                                    class="font-mono text-blue-400 hover:text-blue-300 hover:underline text-left">
+                                    <span x-text="'...' + entry.serial.slice(-8)"></span>
+                                </button>
+                                <div class="text-xs text-slate-500 font-mono" x-text="entry.serial"></div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-red-400 shrink-0 mt-0.5">&#10007;</span>
+                                    <span class="text-red-200" x-text="entry.message"></span>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+
+            <!-- Empty state -->
+            <div x-show="filteredLogs.length === 0" class="text-center py-16 text-slate-500">
+                <div class="text-4xl mb-3">&#10003;</div>
+                <p class="text-lg" x-text="logs.length === 0 ? 'No errors logged' : 'No logs match your search'"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('logsPage', () => ({
+            logs: [],
+            devices: [],
+            viewMode: 'all',
+            selectedSerial: '',
+            search: '',
+            wsConnected: false,
+            ws: null,
+
+            init() {
+                // Check URL params for pre-selected device
+                const params = new URLSearchParams(location.search);
+                if (params.get('serial')) {
+                    this.viewMode = 'device';
+                    this.selectedSerial = params.get('serial');
+                }
+                // Load device list for dropdown
+                fetch('/api/devices').then(r => r.json()).then(data => { this.devices = data; });
+                this.loadLogs();
+                this.connectWebSocket();
+            },
+
+            async loadLogs() {
+                let url = '/api/logs';
+                if (this.viewMode === 'device' && this.selectedSerial) {
+                    url = `/api/logs/${this.selectedSerial}`;
+                }
+                try {
+                    const res = await fetch(url);
+                    this.logs = await res.json();
+                } catch (e) {
+                    console.error('Failed to load logs', e);
+                }
+            },
+
+            connectWebSocket() {
+                const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+                this.ws = new WebSocket(`${proto}://${location.host}/ws`);
+                this.ws.onopen = () => { this.wsConnected = true; };
+                this.ws.onclose = () => {
+                    this.wsConnected = false;
+                    setTimeout(() => this.connectWebSocket(), 3000);
+                };
+                this.ws.onmessage = (e) => {
+                    const msg = JSON.parse(e.data);
+                    if (msg.type === 'device_update' && msg.category === 'errors') {
+                        // Add new error to the top of logs
+                        const entry = {
+                            serial: msg.device.serial,
+                            message: msg.payload.message || JSON.stringify(msg.payload),
+                            ts: msg.payload.ts || Date.now() / 1000,
+                        };
+                        if (this.viewMode === 'all' || this.selectedSerial === entry.serial) {
+                            this.logs.unshift(entry);
+                            if (this.logs.length > 500) this.logs.length = 500;
+                        }
+                    }
+                    // Update device list
+                    if (msg.type === 'init') {
+                        this.devices = msg.devices;
+                    } else if (msg.type === 'device_update') {
+                        const idx = this.devices.findIndex(d => d.serial === msg.device.serial);
+                        if (idx >= 0) this.devices[idx] = msg.device;
+                        else this.devices.push(msg.device);
+                    }
+                };
+            },
+
+            get filteredLogs() {
+                if (!this.search) return this.logs;
+                const q = this.search.toLowerCase();
+                return this.logs.filter(e =>
+                    e.message.toLowerCase().includes(q) ||
+                    e.serial.toLowerCase().includes(q)
+                );
+            },
+
+            formatTime(ts) {
+                return new Date(ts * 1000).toLocaleString();
+            },
+
+            formatAge(ts) {
+                const secs = Math.floor(Date.now() / 1000 - ts);
+                if (secs < 60) return secs + 's ago';
+                if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
+                if (secs < 86400) return Math.floor(secs / 3600) + 'h ago';
+                return Math.floor(secs / 86400) + 'd ago';
+            },
+        }));
+    });
+    </script>
+</body>
+</html>
