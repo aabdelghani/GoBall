@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Optional
@@ -15,11 +16,11 @@ from models import Alert, DeviceState, DeviceStatus, GameMode, GameState, Hardwa
 log = logging.getLogger(__name__)
 
 ALERT_THRESHOLDS = {
-    "offline_seconds": 300,  # 5 minutes
-    "cpu_temp_c": 80.0,
-    "disk_used_pct": 90.0,
+    "offline_seconds": int(os.environ.get("ALERT_OFFLINE_SECONDS", "300")),
+    "cpu_temp_c": float(os.environ.get("ALERT_CPU_TEMP_C", "80")),
+    "disk_used_pct": float(os.environ.get("ALERT_DISK_USED_PCT", "90")),
 }
-EVENT_RETENTION_DAYS = 7
+EVENT_RETENTION_DAYS = int(os.environ.get("EVENT_RETENTION_DAYS", "7"))
 
 
 class DeviceManager:

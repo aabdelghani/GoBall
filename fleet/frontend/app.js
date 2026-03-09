@@ -28,6 +28,26 @@ document.addEventListener('alpine:init', () => {
         selectedDetail: null,
         selectedEvents: [],
 
+        // Commands
+        cmdLoading: false,
+        cmdResult: null,
+        _cmdWaitId: null,
+
+        // Terminal
+        terminalOpen: false,
+        terminalSerial: null,
+        _term: null,
+        _termWs: null,
+        _termResizeHandler: null,
+
+        // Firmware update
+        fwOpen: false,
+        fwFile: null,
+        fwUploading: false,
+        fwProgress: 0,
+        fwStage: '',
+        fwResult: null,
+
         // Zoom
         zoomLevels: [1, 1.2, 1.5, 1.7],
         zoomIndex: 0,
@@ -200,10 +220,22 @@ document.addEventListener('alpine:init', () => {
                 this.devices.push(msg.device);
             }
 
+            // Command results
+            if (msg.category === 'command/result') {
+                const p = msg.payload;
+                if (p.id === this._cmdWaitId) {
+                    this.cmdResult = { status: p.status, message: p.message };
+                    this.cmdLoading = false;
+                }
+            }
+
             // Activity feed
             let feedMsg = '';
             if (msg.category === 'status') {
                 feedMsg = `${msg.device.serial} went ${msg.payload}`;
+            } else if (msg.category === 'command/result') {
+                const p = msg.payload;
+                feedMsg = `${msg.device.serial} — Command ${p.action}: ${p.status}`;
             } else if (msg.category === 'game/event') {
                 const p = msg.payload;
                 feedMsg = `${msg.device.serial} — ${p.event}: Player ${p.player} +${p.value}`;
@@ -299,6 +331,163 @@ document.addEventListener('alpine:init', () => {
             this.selectedDevice = null;
             this.selectedDetail = null;
             this.selectedEvents = [];
+            this.cmdResult = null;
+            this.cmdLoading = false;
+        },
+
+        async sendCommand(serial, action) {
+            this.cmdLoading = true;
+            this.cmdResult = null;
+            try {
+                const res = await fetch(`/api/devices/${serial}/command`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action }),
+                });
+                const data = await res.json();
+                if (data.error) {
+                    this.cmdResult = { status: 'error', message: data.error };
+                    this.cmdLoading = false;
+                    return;
+                }
+                this._cmdWaitId = data.command_id;
+                setTimeout(() => {
+                    if (this.cmdLoading && this._cmdWaitId === data.command_id) {
+                        this.cmdResult = { status: 'error', message: 'Timed out waiting for response' };
+                        this.cmdLoading = false;
+                    }
+                }, 15000);
+            } catch (e) {
+                this.cmdResult = { status: 'error', message: 'Request failed: ' + e.message };
+                this.cmdLoading = false;
+            }
+        },
+
+        openTerminal(serial) {
+            this.terminalSerial = serial;
+            this.terminalOpen = true;
+            this.$nextTick(() => this._initTerminal(serial));
+        },
+
+        _initTerminal(serial) {
+            const container = document.getElementById('terminal-container');
+            if (!container) return;
+
+            if (this._term) { this._term.dispose(); this._term = null; }
+            if (this._termWs) { this._termWs.close(); this._termWs = null; }
+            container.innerHTML = '';
+
+            const term = new Terminal({
+                cursorBlink: true,
+                fontSize: 14,
+                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                theme: {
+                    background: '#0f172a',
+                    foreground: '#e2e8f0',
+                    cursor: '#22c55e',
+                },
+            });
+            const fitAddon = new FitAddon.FitAddon();
+            term.loadAddon(fitAddon);
+            term.loadAddon(new WebLinksAddon.WebLinksAddon());
+            term.open(container);
+            fitAddon.fit();
+            this._term = term;
+
+            const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+            const ws = new WebSocket(`${proto}://${location.host}/ws/terminal/${serial}`);
+            this._termWs = ws;
+
+            ws.onopen = () => {
+                ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+                term.writeln('\x1b[32mConnecting to ' + serial + '...\x1b[0m');
+            };
+
+            ws.onmessage = (e) => {
+                const msg = JSON.parse(e.data);
+                if (msg.type === 'output') {
+                    term.write(msg.data);
+                } else if (msg.type === 'error') {
+                    term.writeln('\x1b[31mError: ' + msg.message + '\x1b[0m');
+                }
+            };
+
+            ws.onclose = () => {
+                term.writeln('\r\n\x1b[31mConnection closed.\x1b[0m');
+            };
+
+            term.onData((data) => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'input', data }));
+                }
+            });
+
+            term.onResize(({ cols, rows }) => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+                }
+            });
+
+            this._termResizeHandler = () => fitAddon.fit();
+            window.addEventListener('resize', this._termResizeHandler);
+        },
+
+        closeTerminal() {
+            this.terminalOpen = false;
+            this.terminalSerial = null;
+            if (this._termWs) { this._termWs.close(); this._termWs = null; }
+            if (this._term) { this._term.dispose(); this._term = null; }
+            if (this._termResizeHandler) {
+                window.removeEventListener('resize', this._termResizeHandler);
+                this._termResizeHandler = null;
+            }
+        },
+
+        async deployFirmware() {
+            if (!this.fwFile || !this.selectedDetail) return;
+            this.fwUploading = true;
+            this.fwResult = null;
+            this.fwProgress = 10;
+            this.fwStage = 'Uploading binary...';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', this.fwFile);
+
+                const xhr = new XMLHttpRequest();
+                const serial = this.selectedDetail.serial;
+
+                await new Promise((resolve, reject) => {
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            this.fwProgress = Math.round((e.loaded / e.total) * 50);
+                            this.fwStage = 'Uploading binary...';
+                        }
+                    };
+                    xhr.onload = () => {
+                        this.fwProgress = 50;
+                        this.fwStage = 'Deploying to device...';
+                        resolve();
+                    };
+                    xhr.onerror = () => reject(new Error('Upload failed'));
+                    xhr.open('POST', `/api/devices/${serial}/firmware`);
+                    xhr.send(formData);
+                });
+
+                // Parse response
+                const resp = JSON.parse(xhr.responseText);
+                this.fwProgress = 100;
+                this.fwStage = resp.status === 'ok' ? 'Complete!' : 'Failed';
+                this.fwResult = resp;
+                if (resp.status === 'ok') {
+                    this.fwFile = null;
+                }
+            } catch (e) {
+                this.fwResult = { status: 'error', message: 'Upload failed: ' + e.message };
+                this.fwStage = 'Failed';
+            } finally {
+                this.fwUploading = false;
+            }
         },
 
         // --- Helpers ---

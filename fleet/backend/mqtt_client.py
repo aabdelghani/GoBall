@@ -85,6 +85,8 @@ class MQTTClient:
             await self.dm.update_hardware(serial, payload)
         elif category == "errors":
             await self.dm.add_error(serial, payload)
+        elif category == "command/result":
+            pass  # Just broadcast to dashboards below
         else:
             return
 

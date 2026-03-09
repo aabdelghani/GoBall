@@ -3,16 +3,22 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
+import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from device_manager import DeviceManager
+from models import DeviceStatus
 from mqtt_client import MQTTClient
+from firmware_deploy import deploy_firmware
+from ssh_terminal import terminal_session
 from websocket_manager import WebSocketManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -110,6 +116,79 @@ async def websocket_endpoint(ws: WebSocket):
             await ws.receive_text()  # Keep connection alive
     except WebSocketDisconnect:
         ws_mgr.disconnect(ws)
+
+
+# --- Remote commands ---
+
+class CommandRequest(BaseModel):
+    action: str
+    params: dict = {}
+
+
+@app.post("/api/devices/{serial}/command")
+async def send_command(serial: str, cmd: CommandRequest):
+    dev = dm.get_device(serial)
+    if not dev:
+        return {"error": "Device not found"}
+    if dev.status != DeviceStatus.ONLINE:
+        return {"error": "Device is offline"}
+    cmd_id = str(uuid.uuid4())[:8]
+    payload = {"id": cmd_id, "action": cmd.action, **cmd.params}
+    mqtt.client.publish(f"goball/{serial}/command", json.dumps(payload), qos=1)
+    return {"ok": True, "command_id": cmd_id}
+
+
+# --- Firmware update ---
+
+@app.post("/api/devices/{serial}/firmware")
+async def upload_firmware(serial: str, file: UploadFile):
+    dev = dm.get_device(serial)
+    if not dev:
+        return {"error": "Device not found"}
+    if dev.status != DeviceStatus.ONLINE:
+        return {"error": "Device is offline"}
+    if not dev.system or not dev.system.ip:
+        return {"error": "Device IP unknown"}
+
+    # Read uploaded binary
+    data = await file.read()
+    if len(data) < 1000:
+        return {"error": "File too small to be a valid binary"}
+    if len(data) > 100_000_000:
+        return {"error": "File too large (max 100MB)"}
+
+    # Check ELF header (aarch64)
+    if data[:4] != b'\x7fELF':
+        return {"error": "Not a valid ELF binary"}
+
+    log.info("Firmware upload for %s: %s (%d bytes)", serial, file.filename, len(data))
+
+    # Deploy via SSH in background
+    result = await deploy_firmware(dev.system.ip, data)
+
+    # Notify via MQTT command result so dashboard gets feedback
+    if result["status"] == "ok":
+        mqtt.client.publish(
+            f"goball/{serial}/command/result",
+            json.dumps({"id": "fw-update", "action": "firmware_update", "ts": __import__('time').time(),
+                         "status": "ok", "message": result["message"]}),
+            qos=1,
+        )
+
+    return result
+
+
+# --- SSH terminal ---
+
+@app.websocket("/ws/terminal/{serial}")
+async def terminal_endpoint(ws: WebSocket, serial: str):
+    dev = dm.get_device(serial)
+    if not dev or not dev.system or not dev.system.ip:
+        await ws.accept()
+        await ws.send_json({"type": "error", "message": "Device not found or no IP"})
+        await ws.close()
+        return
+    await terminal_session(ws, dev.system.ip)
 
 
 if __name__ == "__main__":

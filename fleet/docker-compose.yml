@@ -2,7 +2,7 @@ services:
   mosquitto:
     image: eclipse-mosquitto:2
     ports:
-      - "1883:1883"
+      - "${MQTT_BROKER_PORT:-1883}:1883"
     volumes:
       - ./broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./broker/acl.conf:/mosquitto/config/acl.conf
@@ -13,16 +13,17 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "${DASHBOARD_PORT:-8000}:8000"
+    env_file:
+      - server.conf
     environment:
       - MQTT_BROKER_HOST=mosquitto
-      - MQTT_BROKER_PORT=1883
-      - MQTT_USERNAME=backend
-      - MQTT_PASSWORD=changeme
-      - SQLITE_DB_PATH=/data/fleet.db
+      - SSH_KEY_PATH=/keys/id_ed25519
+      - SSH_USERNAME=${SSH_USERNAME:-q}
     volumes:
       - backend_data:/data
       - ./frontend:/app/static
+      - ./keys:/keys:ro
     depends_on:
       - mosquitto
     restart: unless-stopped
