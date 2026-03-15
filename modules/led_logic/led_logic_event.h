@@ -79,6 +79,9 @@ void trigger_flash_with_color(led_strip_controller_t* controller, uint32_t durat
                               wbgr_color_t color);
 void set_all_leds(led_strip_controller_t* controller, uint32_t color);
 void clear_all_leds(led_strip_controller_t* controller);
+
+// LED kill switch (UI toggle — thread stays alive but strip goes dark)
+void led_set_killed(bool killed);
 void restore_animation(lv_timer_t* timer);
 void flash_toggle(lv_timer_t* timer);
 #endif  // LED_LOGIC_EVENT_H

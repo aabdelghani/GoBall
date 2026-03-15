@@ -19,7 +19,8 @@ const wbgr_color_t     COLOR_WHITE = {0xFF, 0xFF, 0xFF, 0xFF};  // W+B+G+R
 /* ── LED thread state (shared with main thread via atomics/volatiles) ── */
 static pthread_t       led_thread;
 static volatile bool   led_thread_running = false;
-static volatile bool   animation_paused   = false;
+volatile bool   animation_paused   = false;
+static volatile bool   leds_killed        = false;  /* true = strip off, thread still runs */
 
 /* Flash request: main thread writes, LED thread reads and executes */
 static volatile bool         flash_pending  = false;
@@ -102,6 +103,20 @@ static void* led_thread_func(void* arg)
 
             animation_paused = false;
             DEBUG_INFO(MODULE_LED, "Flash complete, animation resumed");
+            continue;
+        }
+
+        /* LED kill switch — send zeros and sleep until re-enabled */
+        if (leds_killed)
+        {
+            memset(controller->databuf1, 0, sizeof(controller->databuf1));
+            memset(controller->databuf2, 0, sizeof(controller->databuf2));
+            led_xfer(controller);
+            while (leds_killed && led_thread_running)
+                usleep(50000);
+            /* Clear FIFOs so PIO doesn't stall on resume */
+            pio_sm_clear_fifos(controller->pio, controller->sm1);
+            pio_sm_clear_fifos(controller->pio, controller->sm2);
             continue;
         }
 
@@ -222,6 +237,12 @@ void led_stop_thread(void)
         pthread_join(led_thread, NULL);
         DEBUG_INFO(MODULE_LED, "LED thread stopped");
     }
+}
+
+void led_set_killed(bool killed)
+{
+    leds_killed = killed;
+    DEBUG_INFO(MODULE_LED, "LED kill switch: %s", killed ? "OFF" : "ON");
 }
 
 void set_brightness(led_strip_controller_t* controller, uint8_t value)

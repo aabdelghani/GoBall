@@ -4,6 +4,39 @@
 // Project name: Go Ball Raspbery PI
 
 #include "../ui.h"
+#include "../../modules/led_logic/led_logic_event.h"
+
+static int _logo_tap_count = 0;
+static uint32_t _logo_last_tap_ms = 0;
+static bool _leds_off = false;
+
+static void logo_tap_cb(lv_event_t *e)
+{
+    (void)e;
+    uint32_t now = lv_tick_get();
+
+    if (now - _logo_last_tap_ms > 2000)
+        _logo_tap_count = 0;
+    _logo_last_tap_ms = now;
+    _logo_tap_count++;
+
+    if (_logo_tap_count >= 5) {
+        _logo_tap_count = 0;
+        _leds_off = !_leds_off;
+        led_set_killed(_leds_off);
+
+        lv_obj_t *msg = lv_label_create(lv_layer_top());
+        lv_label_set_text(msg, _leds_off ? "LED Strip OFF" : "LED Strip ON");
+        lv_obj_set_style_text_color(msg,
+            _leds_off ? lv_color_hex(0xFF4444) : lv_color_hex(0x00F46A), 0);
+        lv_obj_set_style_text_font(msg, &ui_font_Unitblock_72, 0);
+        lv_obj_set_style_bg_color(msg, lv_color_hex(0x000000), 0);
+        lv_obj_set_style_bg_opa(msg, LV_OPA_70, 0);
+        lv_obj_set_style_pad_all(msg, 20, 0);
+        lv_obj_align(msg, LV_ALIGN_CENTER, 0, 0);
+        lv_obj_delete_delayed(msg, 2000);
+    }
+}
 
 void ui_UFScreen_screen_init(void)
 {
@@ -152,5 +185,9 @@ void ui_UFScreen_screen_init(void)
     lv_obj_add_event_cb(ui_UFSBButton, ui_event_UFSBButton, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_UFSUFBText, ui_event_UFSUFBText, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_UFSUFButton, ui_event_UFSUFButton, LV_EVENT_ALL, NULL);
+
+    /* 5-tap logo to toggle LEDs */
+    lv_obj_add_flag(ui_UFSLogo, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(ui_UFSLogo, logo_tap_cb, LV_EVENT_CLICKED, NULL);
 
 }
