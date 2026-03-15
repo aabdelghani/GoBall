@@ -71,3 +71,4 @@ notes.txt
 *.docx
 !doc/*.pdf
 !doc/*.docx
+fleet/backend/.venv/
