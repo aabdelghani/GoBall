@@ -42,8 +42,9 @@ document.addEventListener('alpine:init', () => {
 
         // Firmware update
         fwOpen: false,
-        fwFile: null,
-        fwUploading: false,
+        fwChecking: false,
+        fwCheckResult: null,
+        fwDeploying: false,
         fwProgress: 0,
         fwStage: '',
         fwResult: null,
@@ -447,50 +448,43 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        async deployFirmware() {
-            if (!this.fwFile || !this.selectedDetail) return;
-            this.fwUploading = true;
+        async checkFirmwareUpdate() {
+            if (!this.selectedDetail) return;
+            this.fwOpen = true;
+            this.fwChecking = true;
+            this.fwCheckResult = null;
+            this.fwDeploying = false;
             this.fwResult = null;
-            this.fwProgress = 10;
-            this.fwStage = 'Uploading binary...';
+            this.fwProgress = 0;
 
             try {
-                const formData = new FormData();
-                formData.append('file', this.fwFile);
-
-                const xhr = new XMLHttpRequest();
-                const serial = this.selectedDetail.serial;
-
-                await new Promise((resolve, reject) => {
-                    xhr.upload.onprogress = (e) => {
-                        if (e.lengthComputable) {
-                            this.fwProgress = Math.round((e.loaded / e.total) * 50);
-                            this.fwStage = 'Uploading binary...';
-                        }
-                    };
-                    xhr.onload = () => {
-                        this.fwProgress = 50;
-                        this.fwStage = 'Deploying to device...';
-                        resolve();
-                    };
-                    xhr.onerror = () => reject(new Error('Upload failed'));
-                    xhr.open('POST', `/api/devices/${serial}/firmware`);
-                    xhr.send(formData);
-                });
-
-                // Parse response
-                const resp = JSON.parse(xhr.responseText);
-                this.fwProgress = 100;
-                this.fwStage = resp.status === 'ok' ? 'Complete!' : 'Failed';
-                this.fwResult = resp;
-                if (resp.status === 'ok') {
-                    this.fwFile = null;
-                }
+                const resp = await fetch(`/api/devices/${this.selectedDetail.serial}/firmware/check`);
+                this.fwCheckResult = await resp.json();
             } catch (e) {
-                this.fwResult = { status: 'error', message: 'Upload failed: ' + e.message };
+                this.fwCheckResult = { error: 'Failed to check: ' + e.message };
+            } finally {
+                this.fwChecking = false;
+            }
+        },
+
+        async deployServerFirmware() {
+            if (!this.selectedDetail) return;
+            this.fwDeploying = true;
+            this.fwResult = null;
+            this.fwProgress = 30;
+            this.fwStage = 'Deploying to device...';
+
+            try {
+                const resp = await fetch(`/api/devices/${this.selectedDetail.serial}/firmware/update`, { method: 'POST' });
+                const result = await resp.json();
+                this.fwProgress = 100;
+                this.fwStage = result.status === 'ok' ? 'Complete!' : 'Failed';
+                this.fwResult = result;
+            } catch (e) {
+                this.fwResult = { status: 'error', message: 'Deploy failed: ' + e.message };
                 this.fwStage = 'Failed';
             } finally {
-                this.fwUploading = false;
+                this.fwDeploying = false;
             }
         },
 
@@ -533,6 +527,16 @@ document.addEventListener('alpine:init', () => {
             return 'border-gray-700';
         },
         tempColor(t) { return t > 80 ? 'text-red-400' : t > 65 ? 'text-yellow-400' : 'text-green-400'; },
+        fanLabel(pwm) {
+            if (pwm < 0) return 'No fan';
+            return Math.round(pwm / 255 * 100) + '%';
+        },
+        fanColor(pwm) {
+            if (pwm < 0) return 'text-gray-500';
+            if (pwm > 200) return 'text-red-400';
+            if (pwm > 128) return 'text-yellow-400';
+            return 'text-green-400';
+        },
         feedColor(c) {
             if (c === 'errors') return 'text-red-400';
             if (c === 'status') return 'text-yellow-300';

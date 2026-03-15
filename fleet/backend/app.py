@@ -210,6 +210,102 @@ async def upload_firmware(serial: str, file: UploadFile):
     return result
 
 
+# --- Device-pull firmware (OTA) ---
+
+FIRMWARE_DIR = os.environ.get("FIRMWARE_DIR", "./firmware")
+
+
+@app.get("/api/firmware/latest")
+async def firmware_latest():
+    """Return latest firmware version info for device-initiated OTA."""
+    ver_path = os.path.join(FIRMWARE_DIR, "VERSION")
+    cl_path = os.path.join(FIRMWARE_DIR, "CHANGELOG")
+    bin_path = os.path.join(FIRMWARE_DIR, "goball")
+
+    if not os.path.isfile(ver_path) or not os.path.isfile(bin_path):
+        return {"available": False, "version": "", "changelog": "", "size": 0}
+
+    version = open(ver_path).read().strip()
+    changelog = open(cl_path).read().strip() if os.path.isfile(cl_path) else ""
+    size = os.path.getsize(bin_path)
+
+    return {"available": True, "version": version, "changelog": changelog, "size": size}
+
+
+@app.get("/api/firmware/download")
+async def firmware_download():
+    """Serve the firmware binary for device-initiated OTA."""
+    bin_path = os.path.join(FIRMWARE_DIR, "goball")
+    if not os.path.isfile(bin_path):
+        return {"error": "No firmware binary available"}
+    return FileResponse(bin_path, media_type="application/octet-stream", filename="goball")
+
+
+@app.get("/api/devices/{serial}/firmware/check")
+async def check_device_firmware(serial: str):
+    """Compare device firmware version against server's latest."""
+    dev = dm.get_device(serial)
+    if not dev:
+        return {"error": "Device not found"}
+
+    current = dev.system.firmware_version if dev.system else ""
+
+    ver_path = os.path.join(FIRMWARE_DIR, "VERSION")
+    cl_path = os.path.join(FIRMWARE_DIR, "CHANGELOG")
+    bin_path = os.path.join(FIRMWARE_DIR, "goball")
+
+    if not os.path.isfile(ver_path) or not os.path.isfile(bin_path):
+        return {"update_available": False, "current_version": current,
+                "latest_version": "", "changelog": "", "size": 0}
+
+    latest = open(ver_path).read().strip()
+    changelog = open(cl_path).read().strip() if os.path.isfile(cl_path) else ""
+    size = os.path.getsize(bin_path)
+
+    update_available = bool(current and latest and current != latest)
+
+    return {"update_available": update_available, "current_version": current,
+            "latest_version": latest, "changelog": changelog, "size": size}
+
+
+@app.post("/api/devices/{serial}/firmware/update")
+async def update_device_firmware(serial: str):
+    """Deploy the server's latest firmware binary to a device."""
+    dev = dm.get_device(serial)
+    if not dev:
+        return {"status": "error", "message": "Device not found"}
+    if dev.status != DeviceStatus.ONLINE:
+        return {"status": "error", "message": "Device is offline"}
+    if not dev.system or not dev.system.ip:
+        return {"status": "error", "message": "Device IP unknown"}
+
+    bin_path = os.path.join(FIRMWARE_DIR, "goball")
+    if not os.path.isfile(bin_path):
+        return {"status": "error", "message": "No firmware binary on server"}
+
+    data = open(bin_path, "rb").read()
+    if data[:4] != b'\x7fELF':
+        return {"status": "error", "message": "Server firmware is not a valid ELF binary"}
+
+    ver_path = os.path.join(FIRMWARE_DIR, "VERSION")
+    version = open(ver_path).read().strip() if os.path.isfile(ver_path) else "unknown"
+
+    log.info("Deploying firmware v%s to %s (%s, %d bytes)", version, serial, dev.system.ip, len(data))
+
+    result = await deploy_firmware(dev.system.ip, data)
+
+    if result["status"] == "ok":
+        result["message"] = f"Firmware v{version} deployed successfully. Device restarting."
+        mqtt.client.publish(
+            f"goball/{serial}/command/result",
+            json.dumps({"id": "fw-update", "action": "firmware_update", "ts": __import__('time').time(),
+                         "status": "ok", "message": result["message"]}),
+            qos=1,
+        )
+
+    return result
+
+
 # --- SSH terminal ---
 
 @app.websocket("/ws/terminal/{serial}")

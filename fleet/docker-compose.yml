@@ -23,6 +23,7 @@ services:
     volumes:
       - backend_data:/data
       - ./frontend:/app/static
+      - ./firmware:/app/firmware:ro
       - ./keys:/keys:ro
     depends_on:
       - mosquitto

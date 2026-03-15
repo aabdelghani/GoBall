@@ -245,9 +245,17 @@
                                             </div>
                                         </div>
                                         <div class="text-xs text-slate-400 space-y-0.5">
+                                            <div class="flex justify-between" x-show="d.firmware_version">
+                                                <span>Version</span>
+                                                <span class="text-green-300" x-text="'v' + d.firmware_version"></span>
+                                            </div>
                                             <div class="flex justify-between">
                                                 <span>Temp</span>
                                                 <span :class="tempColor(d.cpu_temp)" x-text="d.cpu_temp ? d.cpu_temp + '°C' : '—'"></span>
+                                            </div>
+                                            <div class="flex justify-between" x-show="d.fan_pwm >= 0">
+                                                <span>Fan</span>
+                                                <span :class="fanColor(d.fan_pwm)" x-text="fanLabel(d.fan_pwm)"></span>
                                             </div>
                                             <div class="flex justify-between">
                                                 <span>Game</span>
@@ -469,39 +477,52 @@
         </div>
     </div>
 
-    <!-- Firmware Upload Modal -->
+    <!-- Firmware Update Modal -->
     <div x-show="fwOpen" x-transition.opacity @click.self="fwOpen = false" class="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4" style="display:none;">
         <div class="bg-slate-800 border border-slate-600 rounded-xl w-full max-w-md" @click.stop>
             <div class="px-5 py-3 border-b border-slate-700 flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-white">Update Firmware</h3>
+                <h3 class="text-sm font-semibold text-white">Firmware Update</h3>
                 <button @click="fwOpen = false" class="text-slate-400 hover:text-white text-xl">&times;</button>
             </div>
             <div class="p-5 space-y-4">
-                <div class="text-xs text-slate-400">
-                    Upload a new GoBall binary for <span class="text-white font-mono" x-text="selectedDetail?.serial?.slice(-8)"></span>.
-                    The current app will be stopped, replaced, and restarted.
-                    A backup is saved as <span class="font-mono text-slate-300">/usr/bin/goball.bak</span>.
+
+                <!-- Checking spinner -->
+                <div x-show="fwChecking" class="text-center py-6">
+                    <div class="inline-block w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <p class="text-sm text-slate-400">Checking for updates...</p>
                 </div>
 
-                <!-- File input -->
-                <label class="block">
-                    <div class="border-2 border-dashed border-slate-600 hover:border-purple-500 rounded-lg p-6 text-center cursor-pointer transition-colors"
-                        :class="fwFile ? 'border-purple-500 bg-purple-900/10' : ''">
-                        <input type="file" class="hidden" @change="fwFile = $event.target.files[0]" accept="*">
-                        <div x-show="!fwFile" class="text-slate-400 text-sm">
-                            <p class="text-2xl mb-2">&#128194;</p>
-                            <p>Click to select binary</p>
-                            <p class="text-xs mt-1 text-slate-500">ELF aarch64 binary (no extension)</p>
-                        </div>
-                        <div x-show="fwFile" class="text-sm">
-                            <p class="text-purple-300 font-mono" x-text="fwFile?.name"></p>
-                            <p class="text-xs text-slate-400 mt-1" x-text="fwFile ? (fwFile.size / 1024 / 1024).toFixed(1) + ' MB' : ''"></p>
-                        </div>
-                    </div>
-                </label>
+                <!-- Up to date -->
+                <div x-show="!fwChecking && fwCheckResult && !fwCheckResult.update_available && !fwCheckResult.error" class="text-center py-6">
+                    <p class="text-3xl mb-2">&#10003;</p>
+                    <p class="text-green-400 font-semibold">Firmware is up to date</p>
+                    <p class="text-sm text-slate-400 mt-2">Current version: <span class="text-white font-mono" x-text="'v' + (fwCheckResult?.current_version || '')"></span></p>
+                </div>
 
-                <!-- Progress -->
-                <div x-show="fwUploading" class="space-y-2">
+                <!-- Update available -->
+                <div x-show="!fwChecking && fwCheckResult?.update_available && !fwDeploying && !fwResult">
+                    <div class="bg-purple-900/20 border border-purple-700/50 rounded-lg p-4 mb-4">
+                        <p class="text-purple-300 font-semibold text-sm mb-3">Update Available</p>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <span class="text-slate-400 block text-xs">Current</span>
+                                <span class="text-white font-mono" x-text="'v' + (fwCheckResult?.current_version || '')"></span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-xs">Latest</span>
+                                <span class="text-green-400 font-mono font-semibold" x-text="'v' + (fwCheckResult?.latest_version || '')"></span>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-2" x-text="((fwCheckResult?.size || 0) / 1024 / 1024).toFixed(1) + ' MB'"></div>
+                    </div>
+                    <div x-show="fwCheckResult?.changelog" class="mb-4">
+                        <p class="text-xs text-slate-400 font-semibold mb-1">What's new:</p>
+                        <div class="text-xs text-slate-300 bg-slate-900/50 rounded p-3 whitespace-pre-line" x-text="fwCheckResult?.changelog"></div>
+                    </div>
+                </div>
+
+                <!-- Deploy progress -->
+                <div x-show="fwDeploying" class="space-y-2">
                     <div class="flex items-center justify-between text-xs">
                         <span class="text-slate-400" x-text="fwStage"></span>
                         <span class="text-purple-300" x-text="fwProgress + '%'"></span>
@@ -517,12 +538,18 @@
                     <span x-text="fwResult?.message"></span>
                 </div>
 
+                <!-- Error -->
+                <div x-show="!fwChecking && fwCheckResult?.error" class="text-xs p-3 rounded bg-red-900/30 text-red-300 border border-red-800/50">
+                    <span x-text="fwCheckResult?.error"></span>
+                </div>
+
                 <!-- Deploy button -->
-                <button @click="deployFirmware()"
-                    :disabled="!fwFile || fwUploading"
+                <button x-show="fwCheckResult?.update_available && !fwResult"
+                    @click="deployServerFirmware()"
+                    :disabled="fwDeploying"
                     class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors">
-                    <span x-show="!fwUploading">Deploy to Device</span>
-                    <span x-show="fwUploading">Deploying...</span>
+                    <span x-show="!fwDeploying" x-text="'Deploy v' + (fwCheckResult?.latest_version || '')"></span>
+                    <span x-show="fwDeploying">Deploying...</span>
                 </button>
             </div>
         </div>
@@ -556,6 +583,18 @@
                             <div><span class="text-slate-400 block">WiFi</span><span class="text-white" x-text="(selectedDetail.system?.wifi_ssid||'—')+' ('+(selectedDetail.system?.wifi_signal_dbm||0)+' dBm)'"></span></div>
                             <div><span class="text-slate-400 block">Uptime</span><span class="text-white" x-text="formatUptime(selectedDetail.system?.uptime_s||0)"></span></div>
                             <div><span class="text-slate-400 block">App</span><span :class="selectedDetail.system?.app_running?'text-green-400':'text-red-400'" x-text="selectedDetail.system?.app_running?'Running (PID '+selectedDetail.system?.app_pid+')':'Not Running'"></span></div>
+                            <div x-show="selectedDetail.system?.firmware_version"><span class="text-slate-400 block">Firmware</span><span class="text-green-400 text-lg font-semibold" x-text="'v' + (selectedDetail.system?.firmware_version||'')"></span></div>
+                            <div><span class="text-slate-400 block">Fan</span>
+                                <template x-if="(selectedDetail.system?.fan_pwm ?? -1) >= 0">
+                                    <span>
+                                        <span :class="fanColor(selectedDetail.system?.fan_pwm)" class="text-lg font-semibold" x-text="fanLabel(selectedDetail.system?.fan_pwm)"></span>
+                                        <span class="text-slate-400 text-xs ml-1" x-text="(selectedDetail.system?.fan_rpm ?? -1) >= 0 ? (selectedDetail.system?.fan_rpm + ' RPM') : ''"></span>
+                                    </span>
+                                </template>
+                                <template x-if="(selectedDetail.system?.fan_pwm ?? -1) < 0">
+                                    <span class="text-gray-500">No fan</span>
+                                </template>
+                            </div>
                         </div>
                     </div>
                     <div class="p-6 border-b border-slate-700" x-show="selectedDetail.game">
@@ -603,7 +642,7 @@
                                 class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white text-xs rounded-lg transition-colors">
                                 Terminal
                             </button>
-                            <button @click="fwOpen = true; fwResult = null; fwProgress = 0;"
+                            <button @click="checkFirmwareUpdate()"
                                 :disabled="selectedDetail.status !== 'online'"
                                 class="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
                                 Update Firmware

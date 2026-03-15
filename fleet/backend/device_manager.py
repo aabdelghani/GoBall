@@ -112,6 +112,11 @@ class DeviceManager:
             await self._add_alert(serial, "app_down", f"{serial} app not running")
         else:
             self.alerts = [a for a in self.alerts if not (a.serial == serial and a.alert_type == "app_down")]
+        # Fan failure: PWM is non-zero but RPM reads 0 (fan stalled or disconnected)
+        if dev.system.fan_pwm > 50 and dev.system.fan_rpm == 0:
+            await self._add_alert(serial, "fan_failure", f"{serial} fan not responding (PWM={dev.system.fan_pwm})")
+        elif dev.system.fan_pwm >= 0:
+            self.alerts = [a for a in self.alerts if not (a.serial == serial and a.alert_type == "fan_failure")]
         await self._persist_device(dev)
 
     async def update_game_state(self, serial: str, data: dict):

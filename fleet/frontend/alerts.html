@@ -37,7 +37,8 @@
             ['high_temp', 'High Temp', 'bg-orange-900/60'],
             ['disk_full', 'Disk Full', 'bg-yellow-900/60'],
             ['app_down', 'App Down', 'bg-purple-900/60'],
-            ['error', 'Errors', 'bg-red-900/60']
+            ['error', 'Errors', 'bg-red-900/60'],
+            ['fan_failure', 'Fan Failure', 'bg-orange-900/60']
         ]">
             <button
                 @click="filterType = key"
@@ -184,17 +185,17 @@
             },
 
             severityIcon(type) {
-                const icons = { offline: '&#9676;', high_temp: '&#9888;', disk_full: '&#9888;', app_down: '&#9724;', error: '&#10007;' };
+                const icons = { offline: '&#9676;', high_temp: '&#9888;', disk_full: '&#9888;', app_down: '&#9724;', error: '&#10007;', fan_failure: '&#9888;' };
                 return icons[type] || '?';
             },
 
             severityColor(type) {
-                const colors = { offline: 'text-red-400', high_temp: 'text-orange-400', disk_full: 'text-yellow-400', app_down: 'text-purple-400', error: 'text-red-500' };
+                const colors = { offline: 'text-red-400', high_temp: 'text-orange-400', disk_full: 'text-yellow-400', app_down: 'text-purple-400', error: 'text-red-500', fan_failure: 'text-orange-400' };
                 return colors[type] || 'text-slate-400';
             },
 
             typeLabel(type) {
-                const labels = { offline: 'Offline', high_temp: 'High Temp', disk_full: 'Disk Full', app_down: 'App Down', error: 'Error' };
+                const labels = { offline: 'Offline', high_temp: 'High Temp', disk_full: 'Disk Full', app_down: 'App Down', error: 'Error', fan_failure: 'Fan Failure' };
                 return labels[type] || type;
             },
 
@@ -205,6 +206,7 @@
                     disk_full: 'bg-yellow-900/50 text-yellow-300',
                     app_down: 'bg-purple-900/50 text-purple-300',
                     error: 'bg-red-900/50 text-red-300',
+                    fan_failure: 'bg-orange-900/50 text-orange-300',
                 };
                 return cls[type] || 'bg-slate-700 text-slate-300';
             },

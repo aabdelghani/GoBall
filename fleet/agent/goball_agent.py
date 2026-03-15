@@ -40,6 +40,12 @@ def load_config() -> dict:
         "LONGITUDE": "0",
         "PUBLISH_INTERVAL": "30",
         "MQTT_TLS_CA": "",
+        "FAN_ENABLED": "1",
+        "FAN_TEMP_OFF": "40",
+        "FAN_TEMP_LOW": "50",
+        "FAN_TEMP_HIGH": "70",
+        "FAN_PWM_MIN": "80",
+        "FAN_PWM_MAX": "255",
     }
     # Read from first config file found
     for path in CONF_PATHS:
@@ -78,6 +84,90 @@ LONGITUDE = float(CFG["LONGITUDE"])
 VENUE_NAME = CFG["VENUE_NAME"]
 DEVICE_LABEL = CFG["DEVICE_LABEL"]
 TLS_CA = CFG["MQTT_TLS_CA"]
+FAN_ENABLED = CFG["FAN_ENABLED"] == "1"
+FAN_TEMP_OFF = float(CFG["FAN_TEMP_OFF"])
+FAN_TEMP_LOW = float(CFG["FAN_TEMP_LOW"])
+FAN_TEMP_HIGH = float(CFG["FAN_TEMP_HIGH"])
+FAN_PWM_MIN = int(CFG["FAN_PWM_MIN"])
+FAN_PWM_MAX = int(CFG["FAN_PWM_MAX"])
+
+
+# --- Fan control ---
+
+_fan_hwmon_path: str | None = None
+_fan_hwmon_searched = False
+_fan_no_hw_warned = False
+
+
+def find_fan_hwmon() -> str | None:
+    """Scan /sys/class/hwmon for RPi5 PWM fan. Caches result."""
+    global _fan_hwmon_path, _fan_hwmon_searched
+    if _fan_hwmon_searched:
+        return _fan_hwmon_path
+    _fan_hwmon_searched = True
+    try:
+        for entry in os.listdir("/sys/class/hwmon"):
+            name_path = f"/sys/class/hwmon/{entry}/name"
+            try:
+                with open(name_path) as f:
+                    if f.read().strip() == "pwmfan":
+                        _fan_hwmon_path = f"/sys/class/hwmon/{entry}"
+                        log.info("Found fan hwmon at %s", _fan_hwmon_path)
+                        return _fan_hwmon_path
+            except OSError:
+                continue
+    except OSError:
+        pass
+    return None
+
+
+def get_fan_pwm(hwmon_path: str | None) -> int:
+    """Read current fan PWM duty (0-255). Returns -1 if unavailable."""
+    if not hwmon_path:
+        return -1
+    try:
+        with open(f"{hwmon_path}/pwm1") as f:
+            return int(f.read().strip())
+    except (OSError, ValueError):
+        return -1
+
+
+def get_fan_rpm(hwmon_path: str | None) -> int:
+    """Read fan RPM from tachometer. Returns -1 if unavailable."""
+    if not hwmon_path:
+        return -1
+    try:
+        with open(f"{hwmon_path}/fan1_input") as f:
+            return int(f.read().strip())
+    except (OSError, ValueError):
+        return -1
+
+
+def set_fan_pwm(hwmon_path: str | None, value: int):
+    """Write PWM duty cycle (0-255). Enables manual mode first."""
+    if not hwmon_path:
+        return
+    value = max(0, min(255, value))
+    try:
+        with open(f"{hwmon_path}/pwm1_enable", "w") as f:
+            f.write("1")
+        with open(f"{hwmon_path}/pwm1", "w") as f:
+            f.write(str(value))
+    except OSError as e:
+        log.debug("Failed to set fan PWM: %s", e)
+
+
+def compute_fan_pwm(temp: float) -> int:
+    """Linear interpolation: off below TEMP_OFF, ramp MIN→MAX between LOW→HIGH, max above HIGH."""
+    if temp < FAN_TEMP_OFF:
+        return 0
+    if temp < FAN_TEMP_LOW:
+        return FAN_PWM_MIN
+    if temp >= FAN_TEMP_HIGH:
+        return FAN_PWM_MAX
+    # Linear ramp between LOW and HIGH
+    ratio = (temp - FAN_TEMP_LOW) / (FAN_TEMP_HIGH - FAN_TEMP_LOW)
+    return int(FAN_PWM_MIN + ratio * (FAN_PWM_MAX - FAN_PWM_MIN))
 
 
 # --- System metrics collection ---
@@ -133,18 +223,24 @@ def get_uptime() -> int:
 
 
 def get_wifi_info() -> tuple[str, int]:
+    """Get WiFi SSID and signal using iw (no NetworkManager dependency)."""
     try:
         out = subprocess.check_output(
-            ["nmcli", "-t", "-f", "ACTIVE,SSID,SIGNAL", "dev", "wifi"],
+            ["iw", "dev", "wlan0", "link"],
             timeout=5, stderr=subprocess.DEVNULL,
         ).decode()
+        ssid = ""
+        signal = 0
         for line in out.strip().split("\n"):
-            parts = line.split(":")
-            if len(parts) >= 3 and parts[0] == "yes":
-                return parts[1], -100 + int(parts[2])
+            line = line.strip()
+            if line.startswith("SSID:"):
+                ssid = line.split(":", 1)[1].strip()
+            elif line.startswith("signal:"):
+                # "signal: -52 dBm"
+                signal = int(line.split(":")[1].strip().split()[0])
+        return ssid, signal
     except (subprocess.SubprocessError, FileNotFoundError, ValueError):
-        pass
-    return "", 0
+        return "", 0
 
 
 def get_app_info() -> tuple[bool, int]:
@@ -206,6 +302,24 @@ def collect_system_metrics(serial: str) -> dict:
     mem_used, mem_total = get_memory()
     wifi_ssid, wifi_signal = get_wifi_info()
     app_running, app_pid = get_app_info()
+    firmware_version = ""
+    try:
+        result = subprocess.run(
+            ["strings", "/usr/bin/goball"],
+            capture_output=True, text=True, timeout=5
+        )
+        for line in result.stdout.splitlines():
+            # GOBALL_VERSION is compiled as a bare "X.Y.Z" string
+            if line and all(c.isdigit() or c == '.' for c in line) and line.count('.') == 2:
+                parts = line.split('.')
+                if all(p.isdigit() and len(p) <= 3 for p in parts):
+                    firmware_version = line
+                    break
+    except Exception:
+        pass
+    fan_hw = find_fan_hwmon()
+    fan_pwm = get_fan_pwm(fan_hw)
+    fan_rpm = get_fan_rpm(fan_hw)
     hostname = VENUE_NAME or socket.gethostname()
     if DEVICE_LABEL:
         hostname = f"{hostname} - {DEVICE_LABEL}"
@@ -224,6 +338,9 @@ def collect_system_metrics(serial: str) -> dict:
         "app_pid": app_pid,
         "lat": LATITUDE,
         "lng": LONGITUDE,
+        "firmware_version": firmware_version,
+        "fan_pwm": fan_pwm,
+        "fan_rpm": fan_rpm,
     }
 
 
@@ -470,11 +587,47 @@ ALLOWED_COMMANDS = {
 }
 
 
+def handle_set_fan(client, prefix, payload):
+    """Handle remote fan config update."""
+    cmd_id = payload.get("id", "")
+    result = {"id": cmd_id, "action": "set_fan", "ts": time.time()}
+    config = payload.get("config", {})
+    if not config:
+        result["status"] = "error"
+        result["message"] = "No config provided"
+        client.publish(f"{prefix}/command/result", json.dumps(result), qos=1)
+        return
+    global FAN_ENABLED, FAN_TEMP_OFF, FAN_TEMP_LOW, FAN_TEMP_HIGH, FAN_PWM_MIN, FAN_PWM_MAX
+    fan_keys = {
+        "FAN_ENABLED": lambda v: v == "1" or v is True,
+        "FAN_TEMP_OFF": float, "FAN_TEMP_LOW": float, "FAN_TEMP_HIGH": float,
+        "FAN_PWM_MIN": int, "FAN_PWM_MAX": int,
+    }
+    for key, conv in fan_keys.items():
+        if key in config:
+            val = conv(config[key])
+            CFG[key] = str(config[key])
+            if key == "FAN_ENABLED": FAN_ENABLED = val
+            elif key == "FAN_TEMP_OFF": FAN_TEMP_OFF = val
+            elif key == "FAN_TEMP_LOW": FAN_TEMP_LOW = val
+            elif key == "FAN_TEMP_HIGH": FAN_TEMP_HIGH = val
+            elif key == "FAN_PWM_MIN": FAN_PWM_MIN = val
+            elif key == "FAN_PWM_MAX": FAN_PWM_MAX = val
+    result["status"] = "ok"
+    result["message"] = f"Fan config updated: {config}"
+    client.publish(f"{prefix}/command/result", json.dumps(result), qos=1)
+    log.info("Fan config updated via MQTT: %s", config)
+
+
 def handle_command(client, prefix, payload):
     """Execute a remote command and publish the result."""
     cmd_id = payload.get("id", "")
     action = payload.get("action", "")
     result = {"id": cmd_id, "action": action, "ts": time.time()}
+
+    if action == "set_fan":
+        handle_set_fan(client, prefix, payload)
+        return
 
     if action not in ALLOWED_COMMANDS:
         result["status"] = "error"
@@ -507,6 +660,7 @@ def handle_command(client, prefix, payload):
 # --- Main ---
 
 def main():
+    global _fan_no_hw_warned
     serial = get_serial()
     prefix = f"goball/{serial}"
     log.info("GoBall agent starting, serial=%s, broker=%s:%d", serial, BROKER_HOST, BROKER_PORT)
@@ -568,6 +722,17 @@ def main():
         while running:
             metrics = collect_system_metrics(serial)
             client.publish(f"{prefix}/system", json.dumps(metrics))
+
+            # Fan control
+            if FAN_ENABLED:
+                fan_hw = find_fan_hwmon()
+                if fan_hw:
+                    target_pwm = compute_fan_pwm(metrics["cpu_temp"])
+                    set_fan_pwm(fan_hw, target_pwm)
+                elif not _fan_no_hw_warned:
+                    log.warning("Fan control enabled but no fan hardware found (pwmfan hwmon)")
+                    _fan_no_hw_warned = True
+
             log_parser.poll()
             time.sleep(PUBLISH_INTERVAL)
     finally:

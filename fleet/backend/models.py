@@ -35,6 +35,9 @@ class SystemMetrics(BaseModel):
     app_pid: int = 0
     lat: float = 0.0
     lng: float = 0.0
+    firmware_version: str = ""
+    fan_pwm: int = -1       # 0-255 duty cycle, -1 = no fan
+    fan_rpm: int = -1        # RPM, -1 = no tach/no fan
 
 
 class GameState(BaseModel):
@@ -78,11 +81,14 @@ class DeviceState(BaseModel):
             "mem_used_mb": self.system.mem_used_mb if self.system else 0,
             "mem_total_mb": self.system.mem_total_mb if self.system else 0,
             "disk_used_pct": self.system.disk_used_pct if self.system else 0,
+            "firmware_version": self.system.firmware_version if self.system else "",
+            "fan_pwm": self.system.fan_pwm if self.system else -1,
+            "fan_rpm": self.system.fan_rpm if self.system else -1,
         }
 
 
 class Alert(BaseModel):
     serial: str
-    alert_type: str  # "offline", "high_temp", "disk_full", "app_down", "error"
+    alert_type: str  # "offline", "high_temp", "disk_full", "app_down", "error", "fan_failure"
     message: str
     ts: float
