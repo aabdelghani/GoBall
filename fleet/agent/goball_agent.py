@@ -40,6 +40,8 @@ def load_config() -> dict:
         "LONGITUDE": "0",
         "PUBLISH_INTERVAL": "30",
         "MQTT_TLS_CA": "",
+        "MQTT_TLS_CERT": "",
+        "MQTT_TLS_KEY": "",
         "FAN_ENABLED": "1",
         "FAN_TEMP_OFF": "40",
         "FAN_TEMP_LOW": "50",
@@ -84,6 +86,8 @@ LONGITUDE = float(CFG["LONGITUDE"])
 VENUE_NAME = CFG["VENUE_NAME"]
 DEVICE_LABEL = CFG["DEVICE_LABEL"]
 TLS_CA = CFG["MQTT_TLS_CA"]
+TLS_CERT = CFG["MQTT_TLS_CERT"]
+TLS_KEY = CFG["MQTT_TLS_KEY"]
 FAN_ENABLED = CFG["FAN_ENABLED"] == "1"
 FAN_TEMP_OFF = float(CFG["FAN_TEMP_OFF"])
 FAN_TEMP_LOW = float(CFG["FAN_TEMP_LOW"])
@@ -660,7 +664,7 @@ def handle_command(client, prefix, payload):
 # --- Main ---
 
 def main():
-    global _fan_no_hw_warned
+    global _fan_no_hw_warned, BROKER_PORT
     serial = get_serial()
     prefix = f"goball/{serial}"
     log.info("GoBall agent starting, serial=%s, broker=%s:%d", serial, BROKER_HOST, BROKER_PORT)
@@ -669,12 +673,31 @@ def main():
         callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
         client_id=f"goball-{serial}",
     )
-    if MQTT_USER:
-        client.username_pw_set(MQTT_USER, MQTT_PASS)
+    # mTLS: if client cert is provided, use cert auth (no password needed)
+    tls_client_cert = TLS_CERT if TLS_CERT and os.path.isfile(TLS_CERT) else None
+    tls_client_key = TLS_KEY if TLS_KEY and os.path.isfile(TLS_KEY) else None
 
     if TLS_CA and os.path.isfile(TLS_CA):
-        client.tls_set(ca_certs=TLS_CA)
-        log.info("TLS enabled with CA: %s", TLS_CA)
+        import ssl
+        client.tls_set(
+            ca_certs=TLS_CA,
+            certfile=tls_client_cert,
+            keyfile=tls_client_key,
+            tls_version=ssl.PROTOCOL_TLSv1_2,
+        )
+        if tls_client_cert:
+            log.info("mTLS enabled (CA: %s, cert: %s)", TLS_CA, TLS_CERT)
+            # Auto-switch to 8883 if port was left at default 1883
+            if BROKER_PORT == 1883:
+                BROKER_PORT = 8883
+                log.info("Auto-switched to port 8883 for mTLS")
+        else:
+            log.info("TLS enabled with CA: %s (no client cert)", TLS_CA)
+            # Use password auth when no client cert
+            if MQTT_USER:
+                client.username_pw_set(MQTT_USER, MQTT_PASS)
+    elif MQTT_USER:
+        client.username_pw_set(MQTT_USER, MQTT_PASS)
 
     # Last Will and Testament
     client.will_set(f"{prefix}/status", "offline", qos=1, retain=True)

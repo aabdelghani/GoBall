@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 /* ── constants ───────────────────────────────────────── */
 
@@ -61,26 +62,24 @@ static void check_wifi_status(void)
     _wifi_connected = false;
     _current_ssid[0] = '\0';
 
-    FILE *fp = popen("nmcli -t -f NAME,TYPE,DEVICE con show --active 2>/dev/null", "r");
+    FILE *fp = popen("iw dev wlan0 link 2>/dev/null", "r");
     if (!fp) return;
 
     char line[256];
+    bool got_connected = false;
     while (fgets(line, sizeof(line), fp)) {
         line[strcspn(line, "\n")] = '\0';
-        /* Format: NAME:TYPE:DEVICE — look for wifi type */
-        char *name = line;
-        char *type = strchr(line, ':');
-        if (!type) continue;
-        *type++ = '\0';
-        /* Check if type starts with "802-11-wireless" */
-        if (strstr(type, "wireless") || strstr(type, "wifi")) {
-            _wifi_connected = true;
-            strncpy(_current_ssid, name, SSID_MAX_LEN);
+        if (strncmp(line, "Connected to ", 13) == 0) {
+            got_connected = true;
+        } else if (strncmp(line, "\tSSID: ", 7) == 0) {
+            strncpy(_current_ssid, line + 7, SSID_MAX_LEN);
             _current_ssid[SSID_MAX_LEN] = '\0';
-            break;
         }
     }
     pclose(fp);
+
+    if (got_connected && _current_ssid[0] != '\0')
+        _wifi_connected = true;
 }
 
 static void update_wifi_icon(void)
@@ -310,43 +309,96 @@ void wifi_manager_show(void)
 
 static int scan_networks(wifi_entry_t *out, int max_count)
 {
-    FILE *fp = popen("nmcli -t -f SSID,SIGNAL,SECURITY dev wifi list 2>/dev/null", "r");
+    /* Trigger a fresh scan (ignore errors — results come from cache if scan busy) */
+    system("iw dev wlan0 scan trigger 2>/dev/null");
+
+    /* Small delay to let scan results populate */
+    struct timespec ts = {0, 500000000}; /* 500ms */
+    nanosleep(&ts, NULL);
+
+    FILE *fp = popen(
+        "iw dev wlan0 scan dump 2>/dev/null", "r");
     if (!fp) return 0;
 
-    char line[256];
+    char line[512];
     int count = 0;
+    char cur_ssid[SSID_MAX_LEN + 1] = "";
+    int  cur_signal = -100;
+    char cur_security[32] = "";
 
-    while (fgets(line, sizeof(line), fp) && count < max_count) {
+    while (fgets(line, sizeof(line), fp)) {
         line[strcspn(line, "\n")] = '\0';
 
-        char *ssid_str = line;
-        char *sig_str  = strchr(line, ':');
-        if (!sig_str) continue;
-        *sig_str++ = '\0';
+        /* New BSS entry — save previous if valid */
+        if (strncmp(line, "BSS ", 4) == 0) {
+            if (cur_ssid[0] != '\0' && count < max_count) {
+                /* Convert dBm to percentage (rough: -30=100%, -90=0%) */
+                int pct = (cur_signal + 90) * 100 / 60;
+                if (pct > 100) pct = 100;
+                if (pct < 0) pct = 0;
 
-        char *sec_str = strchr(sig_str, ':');
-        if (!sec_str) continue;
-        *sec_str++ = '\0';
+                /* Check for duplicate SSID, keep strongest */
+                int dup = 0;
+                for (int i = 0; i < count; i++) {
+                    if (strcmp(out[i].ssid, cur_ssid) == 0) {
+                        if (pct > out[i].signal) out[i].signal = pct;
+                        dup = 1;
+                        break;
+                    }
+                }
+                if (!dup) {
+                    strncpy(out[count].ssid, cur_ssid, SSID_MAX_LEN);
+                    out[count].ssid[SSID_MAX_LEN] = '\0';
+                    out[count].signal = pct;
+                    strncpy(out[count].security, cur_security,
+                            sizeof(out[count].security) - 1);
+                    out[count].security[sizeof(out[count].security) - 1] = '\0';
+                    count++;
+                }
+            }
+            cur_ssid[0] = '\0';
+            cur_signal = -100;
+            cur_security[0] = '\0';
+            continue;
+        }
 
-        if (ssid_str[0] == '\0') continue;
+        /* Parse fields (lines are tab-indented) */
+        char *p = line;
+        while (*p == '\t' || *p == ' ') p++;
+
+        if (strncmp(p, "SSID: ", 6) == 0) {
+            strncpy(cur_ssid, p + 6, SSID_MAX_LEN);
+            cur_ssid[SSID_MAX_LEN] = '\0';
+        } else if (strncmp(p, "signal: ", 8) == 0) {
+            cur_signal = atoi(p + 8); /* dBm value, e.g. -45 */
+        } else if (strncmp(p, "RSN:", 4) == 0 || strncmp(p, "WPA:", 4) == 0) {
+            strncpy(cur_security, "WPA", sizeof(cur_security) - 1);
+        }
+    }
+
+    /* Don't forget last BSS entry */
+    if (cur_ssid[0] != '\0' && count < max_count) {
+        int pct = (cur_signal + 90) * 100 / 60;
+        if (pct > 100) pct = 100;
+        if (pct < 0) pct = 0;
 
         int dup = 0;
-        int sig = atoi(sig_str);
         for (int i = 0; i < count; i++) {
-            if (strcmp(out[i].ssid, ssid_str) == 0) {
-                if (sig > out[i].signal) out[i].signal = sig;
+            if (strcmp(out[i].ssid, cur_ssid) == 0) {
+                if (pct > out[i].signal) out[i].signal = pct;
                 dup = 1;
                 break;
             }
         }
-        if (dup) continue;
-
-        strncpy(out[count].ssid, ssid_str, SSID_MAX_LEN);
-        out[count].ssid[SSID_MAX_LEN] = '\0';
-        out[count].signal = sig;
-        strncpy(out[count].security, sec_str, sizeof(out[count].security) - 1);
-        out[count].security[sizeof(out[count].security) - 1] = '\0';
-        count++;
+        if (!dup) {
+            strncpy(out[count].ssid, cur_ssid, SSID_MAX_LEN);
+            out[count].ssid[SSID_MAX_LEN] = '\0';
+            out[count].signal = pct;
+            strncpy(out[count].security, cur_security,
+                    sizeof(out[count].security) - 1);
+            out[count].security[sizeof(out[count].security) - 1] = '\0';
+            count++;
+        }
     }
 
     pclose(fp);
@@ -487,17 +539,8 @@ static void disconnect_btn_cb(lv_event_t *e)
     (void)e;
     if (!_wifi_connected || _current_ssid[0] == '\0') return;
 
-    char cmd[256];
-    snprintf(cmd, sizeof(cmd), "nmcli con down '%s' 2>&1", _current_ssid);
     fprintf(stderr, "[WIFI] Disconnecting from '%s'...\n", _current_ssid);
-
-    FILE *fp = popen(cmd, "r");
-    if (fp) {
-        char result[256];
-        while (fgets(result, sizeof(result), fp))
-            fprintf(stderr, "[WIFI] nmcli: %s", result);
-        pclose(fp);
-    }
+    system("nmcli device disconnect wlan0 2>/dev/null");
 
     check_wifi_status();
     update_wifi_icon();
@@ -531,24 +574,25 @@ static void kb_ready_cb(lv_event_t *e)
     if (_kb) lv_obj_add_flag(_kb, LV_OBJ_FLAG_HIDDEN);
     if (_kb_ta) lv_obj_add_flag(_kb_ta, LV_OBJ_FLAG_HIDDEN);
 
-    char cmd[512];
-    snprintf(cmd, sizeof(cmd),
-             "nmcli dev wifi connect '%s' password '%s' 2>&1",
-             _selected_ssid, pass);
-
     fprintf(stderr, "[WIFI] Connecting to '%s'...\n", _selected_ssid);
 
-    FILE *fp = popen(cmd, "r");
+    char cmd[512];
     int success = 0;
-    if (fp) {
-        char result[256];
-        while (fgets(result, sizeof(result), fp)) {
-            fprintf(stderr, "[WIFI] nmcli: %s", result);
-            if (strstr(result, "successfully activated")) {
-                success = 1;
-            }
-        }
-        pclose(fp);
+
+    /* Use nmcli to connect (creates/updates connection profile automatically) */
+    snprintf(cmd, sizeof(cmd),
+             "nmcli device wifi connect '%s' password '%s' ifname wlan0 2>/dev/null",
+             _selected_ssid, pass);
+    int ret = system(cmd);
+
+    if (ret == 0) {
+        /* Wait a moment for association */
+        struct timespec ts = {3, 0};
+        nanosleep(&ts, NULL);
+
+        check_wifi_status();
+        if (_wifi_connected && strcmp(_current_ssid, _selected_ssid) == 0)
+            success = 1;
     }
 
     if (_status_lbl) {

@@ -9,6 +9,7 @@
 #include "../modules/sound_logic/sound_logic_event.h"
 #include "../modules/logic/gpio_event.h"
 #include "../modules/game_videos/game_videos.h"
+#include "../modules/ota_update/ota_update.h"
 
 ///////////////////// VARIABLES ////////////////////
 
@@ -7599,7 +7600,7 @@ void ui_event_UFSUFButton(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_CLICKED) {
-        (e);
+        ota_update_show();
     }
 }
 
@@ -7609,7 +7610,7 @@ void ui_event_UFSUFBText(lv_event_t * e)
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_CLICKED) {
-        (e);
+        ota_update_show();
     }
 }
 

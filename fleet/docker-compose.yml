@@ -3,10 +3,12 @@ services:
     image: eclipse-mosquitto:2
     ports:
       - "${MQTT_BROKER_PORT:-1883}:1883"
+      - "${MQTT_TLS_PORT:-8883}:8883"
     volumes:
       - ./broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./broker/acl.conf:/mosquitto/config/acl.conf
       - ./broker/passwd:/mosquitto/config/passwd
+      - ./certs:/mosquitto/config/certs:ro
       - mosquitto_data:/mosquitto/data
     restart: unless-stopped
 

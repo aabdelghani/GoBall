@@ -1,0 +1,4 @@
+# Ignore all generated certs — only keep the script and this .gitignore
+*
+!.gitignore
+!generate.sh

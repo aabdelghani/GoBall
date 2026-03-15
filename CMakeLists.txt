@@ -85,6 +85,7 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/modules/led_logic
     ${PROJECT_SOURCE_DIR}/utils/piolib/include
     ${PROJECT_SOURCE_DIR}/modules/debug  # Add debug include path
+    ${PROJECT_SOURCE_DIR}/modules/ota_update
     ${LIBGPIOD_INCLUDE_DIRS}
 )
 if(NOT YOCTO_BUILD)
@@ -106,6 +107,7 @@ FILE(GLOB_RECURSE DEBUG_Sources CONFIGURE_DEPENDS modules/debug/*.c)  # Add debu
 FILE(GLOB_RECURSE GAME_VIDEOS_Sources CONFIGURE_DEPENDS modules/game_videos/*.c)
 FILE(GLOB_RECURSE PLAYER_NAME_Sources CONFIGURE_DEPENDS modules/player_name/*.c)
 FILE(GLOB_RECURSE WIFI_MANAGER_Sources CONFIGURE_DEPENDS modules/wifi_manager/*.c)
+FILE(GLOB_RECURSE OTA_UPDATE_Sources CONFIGURE_DEPENDS modules/ota_update/*.c)
 
 # Sound directory path (configurable for Yocto vs development)
 if(SOUND_DIR_PATH)
@@ -126,6 +128,7 @@ add_executable(${PROJECT_NAME}
     ${GAME_VIDEOS_Sources}
     ${PLAYER_NAME_Sources}
     ${WIFI_MANAGER_Sources}
+    ${OTA_UPDATE_Sources}
 )
 
 # Link directories and libraries

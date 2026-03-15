@@ -504,7 +504,7 @@ void game_video_play(lv_obj_t *parent, const char *video_path, game_video_back_c
     /* Start ontop enforcer + position poll timer */
     if (video_pid > 0 && _ontop_timer == NULL)
     {
-        _ontop_timer = lv_timer_create(ontop_timer_cb, 500, NULL);
+        _ontop_timer = lv_timer_create(ontop_timer_cb, 10, NULL);
         DEBUG_INFO(MODULE_VIDEO, "Ontop enforcer timer started");
     }
 
