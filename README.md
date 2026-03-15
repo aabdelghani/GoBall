@@ -60,6 +60,18 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 - WiFi status icon in bottom-right corner: green when connected, red when disconnected
 - Auto-polling every 5 seconds to update connection status
 
+### Fleet Monitoring
+- Real-time web dashboard for 10,000+ devices worldwide (MQTT + FastAPI + Alpine.js)
+- RPi agent: system metrics (CPU temp, memory, disk, WiFi, fan), game state via journalctl parsing
+- MQTT broker (Mosquitto): LWT offline detection, per-device ACLs, retained messages
+- Alerts: offline, high temp, disk full, app down, fan failure
+- Remote commands: restart app, reboot, fan config via MQTT
+- OTA firmware updates via SSH with auto-rollback
+- Browser-based SSH terminal to any online device
+- World map with device locations, game mode charts, activity feed
+- RPi5 Active Cooler fan control with configurable PWM thresholds
+- Self-hosted on customer server via Docker (zero cloud costs)
+
 ### UI
 - Built with LVGL and SquareLine Studio
 - Automatic screen transitions to scorecard on game completion
@@ -106,6 +118,13 @@ A Raspberry Pi 5-based mini golf scoring system with an LVGL touchscreen UI, IR 
 │   ├── piolib/                 # PIO library for WS2812 LED control
 │   ├── autostart/              # Desktop files for kiosk mode
 │   └── test/                   # Test utilities and sound tests
+├── fleet/                         # Fleet monitoring system
+│   ├── agent/                     # RPi agent (Python, systemd service)
+│   ├── backend/                   # FastAPI server (MQTT sub, REST, WebSocket)
+│   ├── frontend/                  # Web dashboard (Alpine.js, Tailwind, Leaflet)
+│   ├── broker/                    # Mosquitto MQTT config
+│   ├── tests/                     # Fake agent simulator
+│   └── docker-compose.yml         # Mosquitto + backend containers
 ├── tools/
 │   ├── goball_dashboard.py         # 5-tab development dashboard (deploy, GPIO, test, logs, config)
 │   ├── gpio_loopback_simulator.py  # GPIO test simulator
@@ -224,6 +243,17 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 **Debug modules:** `MAIN`, `LVGL`, `UI`, `GAME`, `SOUND`, `LED`, `GPIO`, `INPUT`, `ANIMATION`, `LOGIC`, `HAL`, `VIDEO`
 
 ## Changelog
+
+### v1.8.0 — 03/15/2026
+- **Fleet monitoring dashboard**: real-time web UI for monitoring 10,000+ GoBall devices worldwide via MQTT
+- **RPi agent**: Python systemd service publishing system metrics (CPU temp, memory, disk, WiFi, uptime) every 30s and game events via journalctl parsing
+- **MQTT broker**: Mosquitto with password auth, per-device ACLs, Last Will Testament for automatic offline detection
+- **Backend API**: FastAPI with 22 REST endpoints, WebSocket real-time updates, in-memory device state, SQLite event history
+- **Dashboard features**: device grid with filters/search/sort, world map (Leaflet), game mode charts (Chart.js), live activity feed, alert panel (6 alert types)
+- **Remote management**: restart app/agent/reboot via MQTT commands, OTA firmware deploy via SSH with auto-rollback, browser-based SSH terminal (xterm.js)
+- **RPi5 fan control**: PWM fan control via sysfs with configurable temp thresholds, linear interpolation, fan failure alerts
+- **Agent WiFi fix**: switched from nmcli to iw for WiFi info (no NetworkManager dependency)
+- **Self-hosted deployment**: Docker Compose (Mosquitto + FastAPI), zero cloud costs, deployable to customer server
 
 ### v1.7.0 — 03/06/2026
 - **WiFi network manager**: tap the G hexagon logo on the home screen to scan, select, and connect to WiFi networks via touchscreen UI
