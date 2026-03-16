@@ -30,6 +30,8 @@ static volatile wbgr_color_t flash_color    = {0};
 /* ── Helper: send both buffers to PIO (only called from LED thread) ── */
 static void led_xfer(led_strip_controller_t* c)
 {
+    pio_sm_clear_fifos(c->pio, c->sm1);
+    pio_sm_clear_fifos(c->pio, c->sm2);
     pio_sm_xfer_data(c->pio, c->sm1, PIO_DIR_TO_SM, sizeof(c->databuf1), c->databuf1);
     pio_sm_xfer_data(c->pio, c->sm2, PIO_DIR_TO_SM, sizeof(c->databuf2), c->databuf2);
 }
@@ -347,10 +349,8 @@ void clear_all_leds(led_strip_controller_t* controller)
 void trigger_flash_with_color(led_strip_controller_t* controller, uint32_t duration_ms,
                               wbgr_color_t color)
 {
-    if (!controller->enabled)
-    {
-        return;
-    }
+    (void)controller; (void)duration_ms; (void)color;
+    return;  /* Flash disabled — train animation runs uninterrupted */
     DEBUG_INFO(MODULE_LED,
                "Triggering flash: duration=%dms, color=W:0x%02X B:0x%02X R:0x%02X G:0x%02X",
                duration_ms, color.w, color.b, color.r, color.g);

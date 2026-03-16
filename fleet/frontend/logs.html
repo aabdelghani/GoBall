@@ -17,7 +17,7 @@
     <!-- Header -->
     <header class="bg-slate-800 border-b border-slate-700 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
         <div class="flex items-center gap-3">
-            <a href="/" class="text-slate-400 hover:text-white transition-colors">&larr; Dashboard</a>
+            <a href="/fleet/" class="text-slate-400 hover:text-white transition-colors">&larr; Dashboard</a>
             <h1 class="text-xl font-semibold text-white">Error Logs</h1>
         </div>
         <div class="flex items-center gap-4 text-sm">
@@ -122,15 +122,15 @@
                     this.selectedSerial = params.get('serial');
                 }
                 // Load device list for dropdown
-                fetch('/api/devices').then(r => r.json()).then(data => { this.devices = data; });
+                fetch('/fleet/api/devices').then(r => r.json()).then(data => { this.devices = data; });
                 this.loadLogs();
                 this.connectWebSocket();
             },
 
             async loadLogs() {
-                let url = '/api/logs';
+                let url = '/fleet/api/logs';
                 if (this.viewMode === 'device' && this.selectedSerial) {
-                    url = `/api/logs/${this.selectedSerial}`;
+                    url = `/fleet/api/logs/${this.selectedSerial}`;
                 }
                 try {
                     const res = await fetch(url);
@@ -142,7 +142,7 @@
 
             connectWebSocket() {
                 const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-                this.ws = new WebSocket(`${proto}://${location.host}/ws`);
+                this.ws = new WebSocket(`${proto}://${location.host}/fleet/ws`);
                 this.ws.onopen = () => { this.wsConnected = true; };
                 this.ws.onclose = () => {
                     this.wsConnected = false;

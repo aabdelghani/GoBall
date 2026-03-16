@@ -17,7 +17,7 @@
     <!-- Header -->
     <header class="bg-slate-800 border-b border-slate-700 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
         <div class="flex items-center gap-3">
-            <a href="/" class="text-slate-400 hover:text-white transition-colors">&larr; Dashboard</a>
+            <a href="/fleet/" class="text-slate-400 hover:text-white transition-colors">&larr; Dashboard</a>
             <h1 class="text-xl font-semibold text-white">Alerts</h1>
         </div>
         <div class="flex items-center gap-4 text-sm">
@@ -130,13 +130,13 @@
 
             init() {
                 // Load initial alerts via REST
-                fetch('/api/alerts').then(r => r.json()).then(data => { this.alerts = data; });
+                fetch('/fleet/api/alerts').then(r => r.json()).then(data => { this.alerts = data; });
                 this.connectWebSocket();
             },
 
             connectWebSocket() {
                 const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-                this.ws = new WebSocket(`${proto}://${location.host}/ws`);
+                this.ws = new WebSocket(`${proto}://${location.host}/fleet/ws`);
                 this.ws.onopen = () => { this.wsConnected = true; };
                 this.ws.onclose = () => {
                     this.wsConnected = false;

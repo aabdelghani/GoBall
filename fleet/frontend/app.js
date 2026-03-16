@@ -1,11 +1,13 @@
 /**
  * GoBall Fleet Monitor — Alpine.js application
  */
+const BASE = location.pathname.replace(/\/$/, '');
 document.addEventListener('alpine:init', () => {
     Alpine.data('dashboard', () => ({
         // Navigation
         tab: 'home', // home, devices, settings
         panel: null,  // null, 'alerts', 'logs'
+        sidebarOpen: false,
 
         // Data
         devices: [],
@@ -79,7 +81,7 @@ document.addEventListener('alpine:init', () => {
         // --- Stats ---
         async loadStats() {
             try {
-                const res = await fetch('/api/stats');
+                const res = await fetch(`${BASE}/api/stats`);
                 this.stats = await res.json();
                 this.$nextTick(() => this.renderCharts());
             } catch (e) { console.error('Failed to load stats', e); }
@@ -188,7 +190,7 @@ document.addEventListener('alpine:init', () => {
 
         async loadErrorLogs() {
             try {
-                const res = await fetch('/api/logs?limit=100');
+                const res = await fetch(`${BASE}/api/logs?limit=100`);
                 this.errorLogs = await res.json();
             } catch (e) { console.error('Failed to load logs', e); }
         },
@@ -196,7 +198,7 @@ document.addEventListener('alpine:init', () => {
         // --- WebSocket ---
         connectWebSocket() {
             const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-            this.ws = new WebSocket(`${proto}://${location.host}/ws`);
+            this.ws = new WebSocket(`${proto}://${location.host}${BASE}/ws`);
             this.ws.onopen = () => { this.wsConnected = true; };
             this.ws.onclose = () => {
                 this.wsConnected = false;
@@ -324,8 +326,8 @@ document.addEventListener('alpine:init', () => {
             this.selectedDevice = serial;
             try {
                 const [detailRes, eventsRes] = await Promise.all([
-                    fetch(`/api/devices/${serial}`),
-                    fetch(`/api/devices/${serial}/events?limit=30`),
+                    fetch(`${BASE}/api/devices/${serial}`),
+                    fetch(`${BASE}/api/devices/${serial}/events?limit=30`),
                 ]);
                 this.selectedDetail = await detailRes.json();
                 this.selectedEvents = await eventsRes.json();
@@ -344,7 +346,7 @@ document.addEventListener('alpine:init', () => {
             this.cmdLoading = true;
             this.cmdResult = null;
             try {
-                const res = await fetch(`/api/devices/${serial}/command`, {
+                const res = await fetch(`${BASE}/api/devices/${serial}/command`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action }),
@@ -400,7 +402,7 @@ document.addEventListener('alpine:init', () => {
             this._term = term;
 
             const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-            const ws = new WebSocket(`${proto}://${location.host}/ws/terminal/${serial}`);
+            const ws = new WebSocket(`${proto}://${location.host}${BASE}/ws/terminal/${serial}`);
             this._termWs = ws;
 
             ws.onopen = () => {
@@ -458,7 +460,7 @@ document.addEventListener('alpine:init', () => {
             this.fwProgress = 0;
 
             try {
-                const resp = await fetch(`/api/devices/${this.selectedDetail.serial}/firmware/check`);
+                const resp = await fetch(`${BASE}/api/devices/${this.selectedDetail.serial}/firmware/check`);
                 this.fwCheckResult = await resp.json();
             } catch (e) {
                 this.fwCheckResult = { error: 'Failed to check: ' + e.message };
@@ -475,7 +477,7 @@ document.addEventListener('alpine:init', () => {
             this.fwStage = 'Deploying to device...';
 
             try {
-                const resp = await fetch(`/api/devices/${this.selectedDetail.serial}/firmware/update`, { method: 'POST' });
+                const resp = await fetch(`${BASE}/api/devices/${this.selectedDetail.serial}/firmware/update`, { method: 'POST' });
                 const result = await resp.json();
                 this.fwProgress = 100;
                 this.fwStage = result.status === 'ok' ? 'Complete!' : 'Failed';
@@ -491,7 +493,7 @@ document.addEventListener('alpine:init', () => {
         // --- Remove device ---
         async removeDevice(serial) {
             if (!confirm(`Remove device ${serial}? This deletes all its data.`)) return;
-            await fetch(`/api/devices/${serial}`, { method: 'DELETE' });
+            await fetch(`${BASE}/api/devices/${serial}`, { method: 'DELETE' });
             this.devices = this.devices.filter(d => d.serial !== serial);
             this.alerts = this.alerts.filter(a => a.serial !== serial);
             if (this.selectedDevice === serial) this.closeDetail();
@@ -499,20 +501,20 @@ document.addEventListener('alpine:init', () => {
 
         // --- Clear actions ---
         async clearErrors(serial) {
-            await fetch(`/api/devices/${serial}/errors`, { method: 'DELETE' });
+            await fetch(`${BASE}/api/devices/${serial}/errors`, { method: 'DELETE' });
             if (this.selectedDetail) this.selectedDetail.error_count = 0;
             const dev = this.devices.find(d => d.serial === serial);
             if (dev) dev.error_count = 0;
         },
 
         async clearAlerts(serial) {
-            await fetch(`/api/devices/${serial}/alerts`, { method: 'DELETE' });
+            await fetch(`${BASE}/api/devices/${serial}/alerts`, { method: 'DELETE' });
             this.alerts = this.alerts.filter(a => a.serial !== serial);
         },
 
         async clearLogs(serial) {
             if (!confirm('Delete all error logs for this device? This cannot be undone.')) return;
-            await fetch(`/api/devices/${serial}/logs`, { method: 'DELETE' });
+            await fetch(`${BASE}/api/devices/${serial}/logs`, { method: 'DELETE' });
             if (this.selectedDetail) this.selectedDetail.error_count = 0;
             const dev = this.devices.find(d => d.serial === serial);
             if (dev) dev.error_count = 0;
@@ -564,6 +566,7 @@ document.addEventListener('alpine:init', () => {
 
         switchTab(t) {
             this.tab = t;
+            this.sidebarOpen = false;
             if (t === 'home') {
                 this.loadStats();
                 this.$nextTick(() => this.renderCharts());

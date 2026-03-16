@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/lib/xterm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10/lib/addon-fit.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11/lib/addon-web-links.min.js"></script>
-    <script src="/static/app.js"></script>
+    <script src="/fleet/static/app.js"></script>
     <style>
         body { background: #0f172a; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
@@ -22,12 +22,18 @@
         .stat-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
         #deviceMap { background: #0f172a; border-radius: 0.75rem; }
         .leaflet-container { background: #0f172a !important; }
+        @media (max-width: 1023px) {
+            nav.w-56 { position: fixed; left: 0; top: 0; bottom: 0; }
+        }
     </style>
 </head>
 <body x-data="dashboard" class="h-screen flex overflow-hidden">
 
+    <!-- Mobile sidebar overlay -->
+    <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/50 z-40 lg:hidden" style="display:none;" x-transition.opacity></div>
+
     <!-- Left Navigation -->
-    <nav class="w-56 bg-slate-800 border-r border-slate-700 flex flex-col shrink-0 sticky top-0 h-screen">
+    <nav class="w-56 bg-slate-800 border-r border-slate-700 flex flex-col shrink-0 sticky top-0 h-screen fixed z-50 lg:relative lg:translate-x-0 transition-transform duration-200" :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
         <!-- Logo -->
         <div class="px-4 py-4 border-b border-slate-700 flex items-center gap-3">
             <div class="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center font-bold text-white text-sm">G</div>
@@ -61,8 +67,13 @@
     <div class="flex-1 flex flex-col h-screen overflow-hidden">
 
         <!-- Top Bar -->
-        <header class="bg-slate-800/80 border-b border-slate-700 px-6 py-2.5 flex items-center justify-between shrink-0 backdrop-blur-sm">
-            <h2 class="text-sm font-semibold text-white" x-text="tab === 'home' ? 'Dashboard' : tab === 'devices' ? 'Fleet Monitor' : 'Settings'"></h2>
+        <header class="bg-slate-800/80 border-b border-slate-700 px-4 lg:px-6 py-2.5 flex items-center justify-between shrink-0 backdrop-blur-sm">
+            <div class="flex items-center gap-3">
+                <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-1.5 rounded-lg hover:bg-slate-700 text-slate-300 transition-colors">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <h2 class="text-sm font-semibold text-white" x-text="tab === 'home' ? 'Dashboard' : tab === 'devices' ? 'Fleet Monitor' : 'Settings'"></h2>
+            </div>
             <div class="flex items-center gap-3 text-sm">
                 <span class="px-3 py-1 rounded-full bg-slate-700 text-xs">
                     <span class="text-green-400" x-text="onlineCount"></span> / <span x-text="devices.length"></span> devices
@@ -413,7 +424,7 @@
                 <div class="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
                     <h3 class="text-sm font-semibold text-white">Active Alerts</h3>
                     <div class="flex items-center gap-2">
-                        <a href="/alerts" class="text-xs text-blue-400 hover:text-blue-300 hover:underline">See more &rarr;</a>
+                        <a href="/fleet/alerts" class="text-xs text-blue-400 hover:text-blue-300 hover:underline">See more &rarr;</a>
                         <button @click="panel = null" class="text-slate-400 hover:text-white text-lg">&times;</button>
                     </div>
                 </div>
@@ -440,7 +451,7 @@
                 <div class="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
                     <h3 class="text-sm font-semibold text-white">Error Logs</h3>
                     <div class="flex items-center gap-2">
-                        <a href="/logs" class="text-xs text-blue-400 hover:text-blue-300 hover:underline">See more &rarr;</a>
+                        <a href="/fleet/logs" class="text-xs text-blue-400 hover:text-blue-300 hover:underline">See more &rarr;</a>
                         <button @click="panel = null" class="text-slate-400 hover:text-white text-lg">&times;</button>
                     </div>
                 </div>
