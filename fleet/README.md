@@ -466,28 +466,63 @@ fleet/
     └── fake_agent.py            # Device simulator for testing
 ```
 
-## mTLS Setup (Production)
+## mTLS (Mutual TLS) — Secure Pi-to-Server Communication
 
-Mutual TLS (mTLS) authenticates both the broker and each Pi device using certificates. Each device gets a unique client cert with its serial number as the Common Name (CN). Mosquitto uses `use_identity_as_username` so the CN becomes the MQTT username — no shared passwords needed.
+### What is mTLS?
 
-### 1. Generate Certificates
+Standard TLS (like HTTPS) only verifies the server's identity — the client checks that the server has a valid certificate. **Mutual TLS (mTLS)** goes both ways: the server also verifies the client's identity via a client certificate.
+
+In the GoBall fleet:
+- The **server** (Mosquitto broker) proves its identity to each Pi using a server certificate
+- Each **Pi** proves its identity to the server using a unique client certificate
+- The client certificate's Common Name (CN) is the Pi's serial number
+- Mosquitto uses `use_identity_as_username true` so the CN automatically becomes the MQTT username
+- No shared passwords needed — each device is cryptographically authenticated
+
+**Why mTLS?**
+- Prevents man-in-the-middle attacks
+- Eliminates shared passwords (no `goball/changeme` credentials to leak)
+- Per-device identity: each Pi has its own cert, and ACLs restrict it to its own topics (`goball/<serial>/#`)
+- Revoke a single device by removing its cert — no password rotation needed across all devices
+
+### How It Works
+
+```
+        Pi (Client)                           Server (Broker)
+        ──────────                           ────────────────
+        Has: ca.crt                          Has: ca.crt
+             client.crt (CN=serial)               server.crt
+             client.key                           server.key
+
+        1. Pi connects to server:8883
+        2. Server sends server.crt ──────>   Pi verifies with ca.crt ✓
+        3. Server requests client cert
+        4. Pi sends client.crt ──────────>   Server verifies with ca.crt ✓
+        5. Server reads CN from cert ────>   CN = "09cbb6816c00f3dd" = MQTT username
+        6. ACL check: can this CN access goball/09cbb6816c00f3dd/# ? ✓
+        7. Connection established, fully encrypted
+```
+
+### First-Time Server Setup
+
+**1. Generate the Certificate Authority and server cert:**
 
 ```bash
 cd fleet/certs
 
-# Generate CA + server cert
-bash generate.sh
-
-# Generate per-device client certs
-bash generate.sh client gb0001 gb0002 gb0003
-
-# Set your broker hostname (default: fleet.example.com)
-BROKER_HOSTNAME=mqtt.yourserver.com bash generate.sh
+# Generate CA + server cert (only once, ever)
+BROKER_HOSTNAME=your-server-hostname.com bash generate.sh
 ```
 
-### 2. Enable mTLS on Broker
+This creates:
+- `ca.crt` + `ca.key` — the Certificate Authority (valid 10 years)
+- `server.crt` + `server.key` — the broker's certificate (valid ~2 years)
 
-Uncomment the mTLS listener block in `broker/mosquitto.conf`:
+The `BROKER_HOSTNAME` must match the hostname/IP that Pis will connect to. You can include multiple IPs by editing `generate.sh`.
+
+**2. Enable the mTLS listener in `broker/mosquitto.conf`:**
+
+Uncomment the mTLS block:
 
 ```
 listener 8883 0.0.0.0
@@ -499,48 +534,162 @@ use_identity_as_username true
 tls_version tlsv1.2
 ```
 
-Then restart: `docker compose down && docker compose up -d`
-
-### 3. Deploy Certs to Pi
+**3. Ensure cert file permissions allow the mosquitto container to read them:**
 
 ```bash
-# Copy CA + device cert to Pi
+chmod 644 certs/server.key certs/ca.key
+```
+
+**4. Restart the fleet:**
+
+```bash
+docker compose --env-file server.conf down && docker compose --env-file server.conf up -d
+```
+
+Verify mosquitto starts without errors:
+
+```bash
+docker logs fleet-mosquitto-1
+```
+
+You should see no `Error: Unable to load` messages. Both listeners (1883 and 8883) should be active.
+
+### Adding a New Pi Device
+
+**1. Get the Pi's serial number:**
+
+```bash
+ssh root@<pi-ip> 'cat /sys/firmware/devicetree/base/serial-number'
+# Example output: 09cbb6816c00f3dd
+```
+
+**2. Generate a client certificate for this Pi (on the server):**
+
+```bash
+cd fleet/certs
+bash generate.sh client 09cbb6816c00f3dd
+# Creates: clients/09cbb6816c00f3dd.crt and clients/09cbb6816c00f3dd.key
+```
+
+You can batch-generate for multiple devices:
+
+```bash
+bash generate.sh client serial1 serial2 serial3
+```
+
+**3. Copy the certs to the Pi:**
+
+```bash
+ssh root@<pi-ip> 'mkdir -p /etc/goball-agent'
 scp fleet/certs/ca.crt root@<pi-ip>:/etc/goball-agent/ca.crt
 scp fleet/certs/clients/<serial>.crt root@<pi-ip>:/etc/goball-agent/client.crt
 scp fleet/certs/clients/<serial>.key root@<pi-ip>:/etc/goball-agent/client.key
 ```
 
-### 4. Configure Agent
+**4. Copy the agent script:**
 
-Uncomment in `/etc/goball-agent.conf`:
+```bash
+ssh root@<pi-ip> 'mkdir -p /opt/goball-agent'
+scp fleet/agent/goball_agent.py root@<pi-ip>:/opt/goball-agent/goball_agent.py
+```
+
+**5. Create the config file on the Pi (`/etc/goball-agent.conf`):**
 
 ```ini
+MQTT_BROKER_HOST=<your-server-ip-or-hostname>
+MQTT_BROKER_PORT=8883
+MQTT_USERNAME=goball
+MQTT_PASSWORD=changeme
+
+VENUE_NAME=<venue name>
+DEVICE_LABEL=<hole name>
+LATITUDE=<decimal latitude>
+LONGITUDE=<decimal longitude>
+
+FLEET_HTTP_PORT=8000
+PUBLISH_INTERVAL=30
+
+FAN_ENABLED=1
+FAN_TEMP_OFF=40
+FAN_TEMP_LOW=50
+FAN_TEMP_HIGH=70
+FAN_PWM_MIN=80
+FAN_PWM_MAX=255
+
 MQTT_TLS_CA=/etc/goball-agent/ca.crt
 MQTT_TLS_CERT=/etc/goball-agent/client.crt
 MQTT_TLS_KEY=/etc/goball-agent/client.key
 ```
 
-When all three are set, the agent uses cert auth and auto-switches to port 8883. Password auth is skipped.
+When `MQTT_TLS_CERT` and `MQTT_TLS_KEY` are set, the agent uses cert auth and ignores `MQTT_USERNAME`/`MQTT_PASSWORD`. The port auto-switches to 8883 if set to 1883.
 
-### 5. Verify
+**6. Install paho-mqtt** (if not baked into the Yocto image):
 
 ```bash
-# Test with mosquitto_sub (requires mosquitto-clients)
-mosquitto_sub -h localhost -p 8883 \
-  --cafile certs/ca.crt \
-  --cert certs/clients/testdev001.crt \
-  --key certs/clients/testdev001.key \
-  -t 'goball/testdev001/#'
+# From a machine with internet, download the wheel:
+pip3 download paho-mqtt==2.1.0 --platform manylinux2014_aarch64 --python-version 312 --only-binary=:all: -d /tmp/wheels
+
+# Copy to Pi and install:
+scp /tmp/wheels/paho_mqtt-2.1.0-*.whl root@<pi-ip>:/tmp/
+ssh root@<pi-ip> 'pip3 install /tmp/paho_mqtt-2.1.0-*.whl'
 ```
+
+**7. Install and start the systemd service:**
+
+```bash
+ssh root@<pi-ip> 'cat > /etc/systemd/system/goball-agent.service << '\''EOF'\''
+[Unit]
+Description=GoBall Fleet Monitoring Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/goball-agent/goball_agent.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload && systemctl enable goball-agent && systemctl start goball-agent'
+```
+
+**8. Verify the connection:**
+
+```bash
+ssh root@<pi-ip> 'journalctl -u goball-agent --no-pager | tail -5'
+```
+
+You should see:
+
+```
+mTLS enabled (CA: /etc/goball-agent/ca.crt, cert: /etc/goball-agent/client.crt)
+Connected to MQTT broker (rc=Success)
+Subscribed to goball/<serial>/command
+```
+
+The device should appear on the dashboard within 30 seconds.
 
 ### Architecture
 
-| Port | Auth | Used By | Network |
-|------|------|---------|---------|
-| 1883 | Password | Backend ↔ Broker | Docker internal |
-| 8883 | mTLS (client cert) | Pi agents → Broker | External |
+| Port | Auth Method | Used By | Network |
+|------|------------|---------|---------|
+| 1883 | Password (`backend`/`goball` users) | Backend ↔ Broker | Docker internal only |
+| 8883 | mTLS (client certificate) | Pi agents → Broker | External (internet) |
 
-The backend stays on plain MQTT inside the Docker network. Only Pi agents use mTLS over port 8883.
+The backend connects to the broker on port 1883 inside the Docker network using password auth. Pi agents connect from the outside on port 8883 using mTLS. The two listeners are independent — disabling one doesn't affect the other.
+
+### Troubleshooting
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| `certificate is not yet valid` | Clock skew between Pi and server | Sync time: `ntpdate pool.ntp.org` on Pi |
+| `IP address mismatch` | Server cert SAN doesn't include the IP the Pi connects to | Regenerate server cert with correct `BROKER_HOSTNAME` or add IP to SAN in `generate.sh` |
+| `certificate verify failed` | Wrong CA cert on Pi, or cert expired | Check `ca.crt` matches server's, check cert dates with `openssl x509 -in cert.crt -noout -dates` |
+| Agent connects but device doesn't appear | ACL blocking — CN doesn't match topic pattern | Check broker logs: `docker logs fleet-mosquitto-1`, verify cert CN matches expected serial |
+| `Permission denied` on broker startup | Mosquitto can't read cert key files | `chmod 644 certs/server.key certs/ca.key` |
 
 ## Security
 

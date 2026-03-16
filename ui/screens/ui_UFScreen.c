@@ -8,7 +8,7 @@
 
 static int _logo_tap_count = 0;
 static uint32_t _logo_last_tap_ms = 0;
-static bool _leds_off = false;
+static bool _flash_off = false;
 
 static void logo_tap_cb(lv_event_t *e)
 {
@@ -22,13 +22,13 @@ static void logo_tap_cb(lv_event_t *e)
 
     if (_logo_tap_count >= 5) {
         _logo_tap_count = 0;
-        _leds_off = !_leds_off;
-        led_set_killed(_leds_off);
+        _flash_off = !_flash_off;
+        led_set_killed(_flash_off);
 
         lv_obj_t *msg = lv_label_create(lv_layer_top());
-        lv_label_set_text(msg, _leds_off ? "LED Strip OFF" : "LED Strip ON");
+        lv_label_set_text(msg, _flash_off ? "Score Flash OFF" : "Score Flash ON");
         lv_obj_set_style_text_color(msg,
-            _leds_off ? lv_color_hex(0xFF4444) : lv_color_hex(0x00F46A), 0);
+            _flash_off ? lv_color_hex(0xFF4444) : lv_color_hex(0x00F46A), 0);
         lv_obj_set_style_text_font(msg, &ui_font_Unitblock_72, 0);
         lv_obj_set_style_bg_color(msg, lv_color_hex(0x000000), 0);
         lv_obj_set_style_bg_opa(msg, LV_OPA_70, 0);

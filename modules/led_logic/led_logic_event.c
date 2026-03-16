@@ -108,20 +108,6 @@ static void* led_thread_func(void* arg)
             continue;
         }
 
-        /* LED kill switch — send zeros and sleep until re-enabled */
-        if (leds_killed)
-        {
-            memset(controller->databuf1, 0, sizeof(controller->databuf1));
-            memset(controller->databuf2, 0, sizeof(controller->databuf2));
-            led_xfer(controller);
-            while (leds_killed && led_thread_running)
-                usleep(50000);
-            /* Clear FIFOs so PIO doesn't stall on resume */
-            pio_sm_clear_fifos(controller->pio, controller->sm1);
-            pio_sm_clear_fifos(controller->pio, controller->sm2);
-            continue;
-        }
-
         /* Normal animation — same speed as original (1 position per frame) */
         if (!animation_paused)
         {
@@ -349,8 +335,10 @@ void clear_all_leds(led_strip_controller_t* controller)
 void trigger_flash_with_color(led_strip_controller_t* controller, uint32_t duration_ms,
                               wbgr_color_t color)
 {
-    (void)controller; (void)duration_ms; (void)color;
-    return;  /* Flash disabled — train animation runs uninterrupted */
+    if (!controller->enabled || leds_killed)
+    {
+        return;
+    }
     DEBUG_INFO(MODULE_LED,
                "Triggering flash: duration=%dms, color=W:0x%02X B:0x%02X R:0x%02X G:0x%02X",
                duration_ms, color.w, color.b, color.r, color.g);
