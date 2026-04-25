@@ -19,6 +19,7 @@
 #include "modules/ui_logic/ui_logic.event.h"
 #include "modules/player_name/player_name.h"
 #include "modules/wifi_manager/wifi_manager.h"
+#include "modules/radio/radio_manager.h"
 #include "ui/ui.h"
 /*********************
  *      DEFINES
@@ -96,6 +97,7 @@ int main(int argc, char **argv)
 
     player_name_init();
     wifi_manager_init();
+    radio_init();
 
     /* Version label on home screen (bottom-right) */
     {

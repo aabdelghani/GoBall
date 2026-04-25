@@ -244,6 +244,14 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 
 ## Changelog
 
+### v1.9.5 — 04/25/2026
+- **PGA Tour Radio in background**: live HLS audio (`https://video-distribution.pgatourhq.com/pgatour-radio/pgatour-radio_1.m3u8`) plays during gameplay; auto-restarts on stream drop via mpv `--cache=yes --loop=inf`
+- **Tap-to-toggle radio icon**: speaker glyph on the home screen (just left of the WiFi icon) — green when on, grey when off; persists across reboot
+- **`radio_manager` module**: spawns mpv as `--no-video` PulseAudio client at `--volume=60` so SDL2_mixer game effects stay dominant; cleaned up via `PR_SET_PDEATHSIG`
+- **Persistence**: `/etc/goball-radio.conf` (`ENABLED`, `URL`, `REFERER`, `VOLUME`); shipped with `ENABLED=0` so the toggle is opt-in on first boot
+- **FFmpeg/mpv HTTPS**: enabled `--enable-openssl` in FFmpeg via `ffmpeg_%.bbappend` so mpv can open `https://` streams (was failing with `No protocol handler found`)
+- **Required HTTP header**: PGA CloudFront rejects fetches without `Referer: https://www.pgatour.com/` — passed via `--http-header-fields`; URL is also US-geo-locked
+
 ### v1.8.0 — 03/15/2026
 - **Fleet monitoring dashboard**: real-time web UI for monitoring 10,000+ GoBall devices worldwide via MQTT
 - **RPi agent**: Python systemd service publishing system metrics (CPU temp, memory, disk, WiFi, uptime) every 30s and game events via journalctl parsing
