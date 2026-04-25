@@ -31,6 +31,7 @@ typedef enum
     MODULE_LOGIC,
     MODULE_HAL,   // Added HAL module
     MODULE_VIDEO, // Video playback (ffplay)
+    MODULE_OTA,   // OTA firmware update
     MODULE_COUNT  // Keep this as the last element
 } debug_module_t;
 
@@ -60,7 +61,8 @@ typedef enum
 static const char *DEBUG_MODULE_NAMES[MODULE_COUNT] = {
     "MAIN", "LVGL", "UI", "GAME", "SOUND", "LED", "GPIO", "INPUT", "ANIMATION", "LOGIC",
     "HAL",   // Added HAL module name
-    "VIDEO"  // Video playback module
+    "VIDEO", // Video playback module
+    "OTA"    // OTA firmware update
 };
 
 /* Function prototypes */

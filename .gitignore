@@ -72,3 +72,7 @@ notes.txt
 !doc/*.pdf
 !doc/*.docx
 fleet/backend/.venv/
+.cache/
+website/
+tools/mpv-raise/mpv-raise
+modules/game_videos/*.MOV
