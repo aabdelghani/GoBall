@@ -71,7 +71,7 @@ static void load_config(void)
             snprintf(_radio_referer, sizeof(_radio_referer), "Referer: %s", v);
         } else if (strcmp(k, "VOLUME") == 0) {
             int n = atoi(v);
-            if (n >= 0 && n <= 200) _radio_volume = n;  /* matches mpv --volume-max=200 */
+            if (n >= 0 && n <= 300) _radio_volume = n;  /* matches mpv --volume-max=300 */
         }
     }
     fclose(fp);
@@ -117,8 +117,8 @@ static void spawn_mpv(void)
     char vol_arg[32], hdr_arg[320];
     snprintf(vol_arg, sizeof(vol_arg), "--volume=%d", _radio_volume);
     snprintf(hdr_arg, sizeof(hdr_arg), "--http-header-fields=%s", _radio_referer);
-    /* mpv's default --volume-max is 130; raise so VOLUME=200 in radio.conf works */
-    const char *vmax_arg = "--volume-max=200";
+    /* mpv's default --volume-max is 130; raise so VOLUME up to 300 in radio.conf works */
+    const char *vmax_arg = "--volume-max=300";
 
     pid_t pid = fork();
     if (pid < 0) {

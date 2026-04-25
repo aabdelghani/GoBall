@@ -244,6 +244,9 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 
 ## Changelog
 
+### v1.9.7 — 04/25/2026
+- **Radio cap raised to 300**: `radio_manager.c` now spawns mpv with `--volume-max=300` and the `/etc/goball-radio.conf` parser accepts `VOLUME` up to 300, so the digital amplification ceiling is now ~+9.5 dB above unity (combined with PulseAudio at 200% = up to ~+27.5 dB above the 0 dB reference)
+
 ### v1.9.6 — 04/25/2026
 - **Image rebuild over v1.9.5 source**: ships the `--volume-max=200` change (and matching parser cap up to 200 in `radio_manager.c`) that landed after the v1.9.5 image was already cut, so `VOLUME=200` in `/etc/goball-radio.conf` is now honored end-to-end (mpv at 200 + PulseAudio at 200% = ~+24 dB above unity reference)
 
