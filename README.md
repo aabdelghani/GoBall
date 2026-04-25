@@ -244,6 +244,9 @@ Set `DEBUG_LEVEL` to control output verbosity: `ERROR(1)`, `WARN(2)`, `INFO(3)`,
 
 ## Changelog
 
+### v1.9.6 — 04/25/2026
+- **Image rebuild over v1.9.5 source**: ships the `--volume-max=200` change (and matching parser cap up to 200 in `radio_manager.c`) that landed after the v1.9.5 image was already cut, so `VOLUME=200` in `/etc/goball-radio.conf` is now honored end-to-end (mpv at 200 + PulseAudio at 200% = ~+24 dB above unity reference)
+
 ### v1.9.5 — 04/25/2026
 - **PGA Tour Radio in background**: live HLS audio (`https://video-distribution.pgatourhq.com/pgatour-radio/pgatour-radio_1.m3u8`) plays during gameplay; auto-restarts on stream drop via mpv `--cache=yes --loop=inf`
 - **Tap-to-toggle radio icon**: speaker glyph on the home screen (just left of the WiFi icon) — green when on, grey when off; persists across reboot
