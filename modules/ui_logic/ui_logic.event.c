@@ -1,4 +1,5 @@
 #include "ui_logic.event.h"
+#include "../player_name/player_name.h"
 
 uint8_t update_flag                 = 0;  // Flag to indicate if all players have completed the game
 uint8_t prev_scores[MAX_PLAYERS][9] = {
@@ -92,6 +93,7 @@ void set_num_players(uint8_t new_num_players)
 
 void reset_scores(void)
 {
+    player_name_reset();
     sensors_enabled = 0;  // Reset sensors enabled flag
     // Reset all players' data
     for (uint8_t i = 0; i < MAX_PLAYERS; i++)

@@ -3,6 +3,7 @@
 #include "game_modes.h"
 #include "../logic/gpio_event.h"
 #include "../led_logic/led_logic_event.h"
+#include "../sound_logic/sound_logic_event.h"
 #include "player.h"
 
 // Quota presets for 9 holes

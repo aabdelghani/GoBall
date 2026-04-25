@@ -1,0 +1,36 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "${MQTT_BROKER_PORT:-1883}:1883"
+      - "${MQTT_TLS_PORT:-8883}:8883"
+    volumes:
+      - ./broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./broker/acl.conf:/mosquitto/config/acl.conf
+      - ./broker/passwd:/mosquitto/config/passwd
+      - ./certs:/mosquitto/config/certs:ro
+      - mosquitto_data:/mosquitto/data
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    ports:
+      - "${DASHBOARD_PORT:-8000}:8000"
+    env_file:
+      - server.conf
+    environment:
+      - MQTT_BROKER_HOST=mosquitto
+      - SSH_KEY_PATH=/keys/id_ed25519
+      - SSH_USERNAME=${SSH_USERNAME:-q}
+    volumes:
+      - backend_data:/data
+      - ./frontend:/app/static
+      - ./firmware:/app/firmware:ro
+      - ./keys:/keys:ro
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
+volumes:
+  mosquitto_data:
+  backend_data:

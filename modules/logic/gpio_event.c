@@ -15,6 +15,9 @@
 #include <unistd.h>
 
 #include "ui/ui.h"
+#include "../sound_logic/sound_logic_event.h"
+#include "../ui_logic/ui_logic.event.h"
+#include "../player_name/player_name.h"
 /*********************
  *      TYPEDEFS
  *********************/
@@ -1361,6 +1364,10 @@ void update_player_highlight(uint8_t detection_count, uint8_t current_hole, uint
                     DEBUG_DEBUG(MODULE_UI, "Stroke Play - 9 holes");
                     switch (num_players)
                     {
+                        case 1:
+                            DEBUG_DEBUG(MODULE_UI, "Stroke Play - 1 player, 9 holes");
+                            highlighted_player = 1;
+                            break;
                         case 2:  // Exact pattern for 2-player stroke play
                             DEBUG_DEBUG(MODULE_UI, "Stroke Play - 2 players, 9 holes");
                             two_player_highlight_pattern(GAME_MODE_STROKE_PLAY, NINE_HOLES);
@@ -1388,6 +1395,10 @@ void update_player_highlight(uint8_t detection_count, uint8_t current_hole, uint
                     DEBUG_DEBUG(MODULE_UI, "Stroke Play - 18 holes");
                     switch (num_players)
                     {
+                        case 1:
+                            DEBUG_DEBUG(MODULE_UI, "Stroke Play - 1 player, 18 holes");
+                            highlighted_player = 1;
+                            break;
                         case 2:  // Exact pattern for 2-player stroke play
                             DEBUG_DEBUG(MODULE_UI, "Stroke Play - 2 players, 18 holes");
                             two_player_highlight_pattern(GAME_MODE_STROKE_PLAY, EIGHTEEN_HOLES);
@@ -4697,7 +4708,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                             DEBUG_INFO(MODULE_LOGIC,
                                        "Updating UI for Single Player Mode - Player %d",
                                        player_index + 1);
-                            lv_label_set_text_fmt(ui_SP1P9HGSPSText, "Player %d", player_index + 1);
+                            lv_label_set_text(ui_SP1P9HGSPSText, player_name_get(player_index));
                             lv_label_set_text_fmt(ui_SP1P9HGSPSPText, "%d", score);
                             lv_label_set_text_fmt(ui_SP1P9HGSHCPText, "%d", current_hole + 1);
                             lv_label_set_text_fmt(ui_SP1P9HGSBCPText, "%d", detection_count);
@@ -4716,8 +4727,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                             {
                                 case 0:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 1");
-                                    lv_label_set_text_fmt(ui_SP2P9HGSP1SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP2P9HGSP1SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP2P9HGSP1SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP2P9HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4737,8 +4747,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
 
                                 case 1:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 2");
-                                    lv_label_set_text_fmt(ui_SP2P9HGSP2SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP2P9HGSP2SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP2P9HGSP2SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP2P9HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4764,8 +4773,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                             {
                                 case 0:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 1");
-                                    lv_label_set_text_fmt(ui_SP3P9HGSP1SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP3P9HGSP1SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP3P9HGSP1SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP3P9HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4781,8 +4789,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                     break;
                                 case 1:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 2");
-                                    lv_label_set_text_fmt(ui_SP3P9HGSP2SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP3P9HGSP2SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP3P9HGSP2SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP3P9HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4798,8 +4805,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                     break;
                                 case 2:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 3");
-                                    lv_label_set_text_fmt(ui_SP3P9HGSP3SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP3P9HGSP3SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP3P9HGSP3SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP3P9HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4823,8 +4829,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                             {
                                 case 0:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 1");
-                                    lv_label_set_text_fmt(ui_SP4P9HGSP1SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP4P9HGSP1SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP4P9HGSP1SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP4P9HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4840,8 +4845,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                     break;
                                 case 1:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 2");
-                                    lv_label_set_text_fmt(ui_SP4P9HGSP2SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP4P9HGSP2SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP4P9HGSP2SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP4P9HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4857,8 +4861,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                     break;
                                 case 2:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 3");
-                                    lv_label_set_text_fmt(ui_SP4P9HGSP3SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP4P9HGSP3SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP4P9HGSP3SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP4P9HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4874,8 +4877,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                     break;
                                 case 3:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 4");
-                                    lv_label_set_text_fmt(ui_SP4P9HGSP4SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP4P9HGSP4SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP4P9HGSP4SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP4P9HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4906,8 +4908,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                             DEBUG_INFO(MODULE_LOGIC,
                                        "Updating UI for Single Player Mode - Player %d",
                                        player_index + 1);
-                            lv_label_set_text_fmt(ui_SP1P18HGSPSPText, "Player %d",
-                                                  player_index + 1);
+                            lv_label_set_text(ui_SP1P18HGSPSText, player_name_get(player_index));
                             lv_label_set_text_fmt(ui_SP1P18HGSPSPText, "%d", score);
                             lv_label_set_text_fmt(ui_SP1P18HGSHCPText, "%d", current_hole + 1);
                             lv_label_set_text_fmt(ui_SP1P18HGSBCPText, "%d", detection_count);
@@ -4923,8 +4924,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                             {
                                 case 0:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 1 18 Holes");
-                                    lv_label_set_text_fmt(ui_SP2P18HGSP1SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP2P18HGSP1SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP2P18HGSP1SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP2P18HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4943,8 +4943,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                     break;
                                 case 1:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 2 18 Holes");
-                                    lv_label_set_text_fmt(ui_SP2P18HGSP2SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP2P18HGSP2SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP2P18HGSP2SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP2P18HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4971,8 +4970,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                             {
                                 case 0:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 1 18 Holes");
-                                    lv_label_set_text_fmt(ui_SP3P18HGSP1SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP3P18HGSP1SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP3P18HGSP1SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP3P18HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -4988,8 +4986,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                     break;
                                 case 1:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 2 18 Holes");
-                                    lv_label_set_text_fmt(ui_SP3P18HGSP2SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP3P18HGSP2SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP3P18HGSP2SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP3P18HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -5005,8 +5002,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                     break;
                                 case 2:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 3 18 Holes");
-                                    lv_label_set_text_fmt(ui_SP3P18HGSP3SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP3P18HGSP3SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP3P18HGSP3SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP3P18HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -5030,8 +5026,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                             {
                                 case 0:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 1 18 Holes");
-                                    lv_label_set_text_fmt(ui_SP4P18HGSP1SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP4P18HGSP1SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP4P18HGSP1SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP4P18HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -5047,8 +5042,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                     break;
                                 case 1:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 2 18 Holes");
-                                    lv_label_set_text_fmt(ui_SP4P18HGSP2SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP4P18HGSP2SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP4P18HGSP2SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP4P18HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -5064,8 +5058,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                     break;
                                 case 2:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 3 18 Holes");
-                                    lv_label_set_text_fmt(ui_SP4P18HGSP3SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP4P18HGSP3SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP4P18HGSP3SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP4P18HGSHCPText, "%d",
                                                           current_hole + 1);
@@ -5081,8 +5074,7 @@ void logic_update_label_text(int player_index, int current_hole, int score, int 
                                     break;
                                 case 3:
                                     DEBUG_TRACE(MODULE_LOGIC, "Player 4 18 Holes");
-                                    lv_label_set_text_fmt(ui_SP4P18HGSP4SText, "Player %d",
-                                                          player_index + 1);
+                                    lv_label_set_text(ui_SP4P18HGSP4SText, player_name_get(player_index));
                                     lv_label_set_text_fmt(ui_SP4P18HGSP4SPText, "%d", score);
                                     lv_label_set_text_fmt(ui_SP4P18HGSHCPText, "%d",
                                                           current_hole + 1);

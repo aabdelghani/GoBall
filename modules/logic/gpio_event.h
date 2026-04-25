@@ -58,7 +58,7 @@ extern time_t        last_activation_times[NUM_SENSORS];  // Last activation tim
 extern struct gpiod_chip*     chip;                       // GPIO chip handle
 extern struct gpiod_line_bulk lines;                      // GPIO lines for sensors
 extern int                    num_players;                // Number of players
-extern uint8_t                updateflag;                 // Game completion flag
+extern uint8_t                update_flag;                // Game completion flag
 
 /*********************
  *      FUNCTION PROTOTYPES

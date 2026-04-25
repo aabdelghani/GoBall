@@ -11,11 +11,15 @@
 #include <unistd.h>
 
 #include "lvgl/lvgl.h"
+#include <SDL2/SDL.h>
 #include "modules/debug/debug.h"
 #include "modules/led_logic/led_logic_event.h"
 #include "modules/logic/gpio_event.h"
 #include "modules/sound_logic/sound_logic_event.h"
 #include "modules/ui_logic/ui_logic.event.h"
+#include "modules/player_name/player_name.h"
+#include "modules/wifi_manager/wifi_manager.h"
+#include "modules/radio/radio_manager.h"
 #include "ui/ui.h"
 /*********************
  *      DEFINES
@@ -91,6 +95,22 @@ int main(int argc, char **argv)
     ui_init();
     DEBUG_INFO(MODULE_UI, "UI initialized successfully");
 
+    player_name_init();
+    wifi_manager_init();
+    radio_init();
+
+    /* Version label on home screen (bottom-right) */
+    {
+        lv_obj_t *ver_label = lv_label_create(ui_HScreen);
+        lv_label_set_text(ver_label, "v" GOBALL_VERSION);
+        lv_obj_set_style_text_color(ver_label, lv_color_hex(0xAAAAAAu), LV_PART_MAIN);
+        lv_obj_set_style_text_font(ver_label, &lv_font_montserrat_14, LV_PART_MAIN);
+        lv_obj_align(ver_label, LV_ALIGN_BOTTOM_RIGHT, -40, -10);
+    }
+
+    /* Override firmware version on Update screen */
+    lv_label_set_text(ui_UFSFVNText, "v" GOBALL_VERSION);
+
     /*My Custom Logic */
     struct gpiod_line_bulk  event_lines;
     struct gpiod_line_event event;
@@ -99,12 +119,16 @@ int main(int argc, char **argv)
      *      GAME INITIALIZATION
      *********************/
     DEBUG_TRACE(MODULE_LOGIC, "#5 Initializing game logic");
+    int gpio_available = 0;
     if (logic_initialize_game(NUM_PLAYERS) < 0)
     {
-        DEBUG_ERROR(MODULE_LOGIC, "! Game initialization failed!");
-        return EXIT_FAILURE;
+        DEBUG_WARN(MODULE_LOGIC, "Game initialization failed (GPIO unavailable) - running in UI-only mode");
     }
-    DEBUG_INFO(MODULE_LOGIC, "Game initialized with %d players", NUM_PLAYERS);
+    else
+    {
+        gpio_available = 1;
+        DEBUG_INFO(MODULE_LOGIC, "Game initialized with %d players", NUM_PLAYERS);
+    }
 
     /* Initialize Sound System */
     DEBUG_TRACE(MODULE_SOUND, "#6 Initializing audio system");
@@ -122,12 +146,14 @@ int main(int argc, char **argv)
 
     /* Initialize LED System */
     DEBUG_TRACE(MODULE_LED, "#7 Initializing LED controller");
-    // Remove the local 'leds' declaration and keep only initialization:
-    leds = init_led_controller(3, 2, argc, argv);  // Uses the global variable
+    leds = init_led_controller(3, 2, argc, argv);
     DEBUG_INFO(MODULE_LED, "LED controller initialized");
 
-    set_brightness(&leds, 50);  // Medium brightness 0 - 255 brightness
+    set_brightness(&leds, 50);
     DEBUG_INFO(MODULE_LED, "LED brightness set to 50");
+
+    /* Start LED thread on core 3 (keeps PIO transfers off the main/LVGL thread) */
+    led_start_thread(&leds);
 
     DEBUG_INFO(MODULE_MAIN, "#8 Entering main loop");
 
@@ -142,8 +168,11 @@ int main(int argc, char **argv)
         update_led_animation(&leds);
 
         // Wait for events on any of the lines (non-blocking call)
-        DEBUG_TRACE(MODULE_LOGIC, "#%d.%d Handling GPIO events", loop_counter, 2);
-        logic_handle_events(&event_lines, &event, num_players);
+        if (gpio_available)
+        {
+            DEBUG_TRACE(MODULE_LOGIC, "#%d.%d Handling GPIO events", loop_counter, 2);
+            logic_handle_events(&event_lines, &event, num_players);
+        }
 
         /* Periodically call the lv_task handler.
          * It could be done in a timer interrupt or an OS task too.*/
@@ -185,6 +214,13 @@ static lv_display_t *hal_init(int32_t w, int32_t h)
     DEBUG_TRACE(MODULE_HAL, "#hal.2 Creating SDL window");
     lv_display_t *disp = lv_sdl_window_create(w, h);
     DEBUG_DEBUG(MODULE_HAL, "SDL window created: %dx%d", w, h);
+
+    /* Hide title bar and set window name */
+    SDL_Window *sdl_win = SDL_GetWindowFromID(1);
+    if (sdl_win) {
+        SDL_SetWindowBordered(sdl_win, SDL_FALSE);
+        SDL_SetWindowTitle(sdl_win, "goball");
+    }
 
     DEBUG_TRACE(MODULE_HAL, "#hal.3 Creating mouse input device");
     lv_indev_t *mouse = lv_sdl_mouse_create();

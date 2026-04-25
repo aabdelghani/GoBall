@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoBall Fleet Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/css/xterm.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10/lib/addon-fit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11/lib/addon-web-links.min.js"></script>
+    <script src="/fleet/static/app.js"></script>
+    <style>
+        body { background: #0f172a; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .stat-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+        #deviceMap { background: #0f172a; border-radius: 0.75rem; }
+        .leaflet-container { background: #0f172a !important; }
+        @media (max-width: 1023px) {
+            nav.w-56 { position: fixed; left: 0; top: 0; bottom: 0; }
+        }
+    </style>
+</head>
+<body x-data="dashboard" class="h-screen flex overflow-hidden">
+
+    <!-- Mobile sidebar overlay -->
+    <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/50 z-40 lg:hidden" style="display:none;" x-transition.opacity></div>
+
+    <!-- Left Navigation -->
+    <nav class="w-56 bg-slate-800 border-r border-slate-700 flex flex-col shrink-0 sticky top-0 h-screen fixed z-50 lg:relative lg:translate-x-0 transition-transform duration-200" :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+        <!-- Logo -->
+        <div class="px-4 py-4 border-b border-slate-700 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center font-bold text-white text-sm">G</div>
+            <span class="text-lg font-semibold text-white">GoBall</span>
+        </div>
+
+        <!-- Nav Items -->
+        <div class="flex-1 py-3 px-2 space-y-1">
+            <button @click="switchTab('home')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors" :class="tab === 'home' ? 'bg-green-600/20 text-green-400' : 'text-slate-300 hover:bg-slate-700'">
+                <span class="text-lg">&#9632;</span> Home
+            </button>
+            <button @click="switchTab('devices')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors" :class="tab === 'devices' ? 'bg-blue-600/20 text-blue-400' : 'text-slate-300 hover:bg-slate-700'">
+                <span class="text-lg">&#9881;</span> Fleet Monitor
+            </button>
+            <button @click="switchTab('settings')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors" :class="tab === 'settings' ? 'bg-purple-600/20 text-purple-400' : 'text-slate-300 hover:bg-slate-700'">
+                <span class="text-lg">&#9881;</span> Settings
+            </button>
+        </div>
+
+        <!-- Bottom status -->
+        <div class="px-4 py-3 border-t border-slate-700 text-xs text-slate-500">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full" :class="wsConnected ? 'bg-green-400' : 'bg-red-400'"></span>
+                <span x-text="wsConnected ? 'Connected' : 'Disconnected'"></span>
+            </div>
+            <div>v1.0.0</div>
+        </div>
+    </nav>
+
+    <!-- Main Area -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+
+        <!-- Top Bar -->
+        <header class="bg-slate-800/80 border-b border-slate-700 px-4 lg:px-6 py-2.5 flex items-center justify-between shrink-0 backdrop-blur-sm">
+            <div class="flex items-center gap-3">
+                <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-1.5 rounded-lg hover:bg-slate-700 text-slate-300 transition-colors">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <h2 class="text-sm font-semibold text-white" x-text="tab === 'home' ? 'Dashboard' : tab === 'devices' ? 'Fleet Monitor' : 'Settings'"></h2>
+            </div>
+            <div class="flex items-center gap-3 text-sm">
+                <span class="px-3 py-1 rounded-full bg-slate-700 text-xs">
+                    <span class="text-green-400" x-text="onlineCount"></span> / <span x-text="devices.length"></span> devices
+                </span>
+                <button @click="togglePanel('alerts')" class="px-3 py-1 rounded-full text-xs cursor-pointer hover:ring-1 hover:ring-white/30 transition-all" :class="[alertCount > 0 ? 'bg-red-900/60 text-red-300' : 'bg-slate-700 text-slate-300', panel === 'alerts' ? 'ring-1 ring-white/40' : '']">
+                    <span x-text="alertCount"></span> alerts
+                </button>
+                <button @click="togglePanel('logs')" class="px-3 py-1 rounded-full text-xs cursor-pointer hover:ring-1 hover:ring-white/30 transition-all" :class="[panel === 'logs' ? 'bg-slate-600 ring-1 ring-white/40 text-white' : 'bg-slate-700 text-slate-300']">
+                    Logs
+                </button>
+                <!-- Font size controls -->
+                <div class="flex items-center bg-slate-700 rounded-full overflow-hidden">
+                    <button @click="zoomOut()" class="px-2 py-1 text-slate-300 hover:bg-slate-600 transition-colors" style="font-size:11px;">A-</button>
+                    <button @click="zoomIn()" class="px-2 py-1 hover:bg-slate-600 transition-colors" style="font-size:14px;font-weight:700;color:#e2e8f0;">A</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content + Panel -->
+        <div class="flex flex-1 overflow-hidden">
+
+            <!-- Page Content -->
+            <div class="flex-1 scrollbar-thin" :class="tab === 'devices' ? 'overflow-hidden' : 'overflow-y-auto'">
+
+                <!-- ==================== HOME TAB ==================== -->
+                <div x-show="tab === 'home'" class="p-6 space-y-6">
+
+                    <!-- KPI Cards Row -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4">
+                        <div class="stat-card border border-slate-700 rounded-xl p-4">
+                            <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Total Devices</div>
+                            <div class="text-2xl font-bold text-white" x-text="stats?.total_devices || 0"></div>
+                        </div>
+                        <div class="stat-card border border-green-900/50 rounded-xl p-4">
+                            <div class="text-xs text-green-400 uppercase tracking-wider mb-1">Online</div>
+                            <div class="text-2xl font-bold text-green-400" x-text="stats?.online || 0"></div>
+                        </div>
+                        <div class="stat-card border border-red-900/50 rounded-xl p-4">
+                            <div class="text-xs text-red-400 uppercase tracking-wider mb-1">Offline</div>
+                            <div class="text-2xl font-bold text-red-400" x-text="stats?.offline || 0"></div>
+                        </div>
+                        <div class="stat-card border border-blue-900/50 rounded-xl p-4">
+                            <div class="text-xs text-blue-400 uppercase tracking-wider mb-1">Total Games</div>
+                            <div class="text-2xl font-bold text-blue-400" x-text="stats?.total_games || 0"></div>
+                        </div>
+                        <div class="stat-card border border-yellow-900/50 rounded-xl p-4">
+                            <div class="text-xs text-yellow-400 uppercase tracking-wider mb-1">Score Events</div>
+                            <div class="text-2xl font-bold text-yellow-400" x-text="stats?.total_score_events || 0"></div>
+                        </div>
+                        <div class="stat-card border border-red-900/50 rounded-xl p-4">
+                            <div class="text-xs text-red-400 uppercase tracking-wider mb-1">Total Errors</div>
+                            <div class="text-2xl font-bold text-red-400" x-text="stats?.total_errors || 0"></div>
+                        </div>
+                    </div>
+
+                    <!-- Averages Row -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="stat-card border border-slate-700 rounded-xl p-4 flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl" :class="(stats?.avg_temp||0) > 70 ? 'bg-red-900/50 text-red-400' : 'bg-green-900/50 text-green-400'">
+                                &#9832;
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-400">Avg CPU Temp</div>
+                                <div class="text-xl font-bold" :class="tempColor(stats?.avg_temp||0)" x-text="(stats?.avg_temp || 0) + '°C'"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card border border-slate-700 rounded-xl p-4 flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center text-xl text-blue-400">&#9776;</div>
+                            <div>
+                                <div class="text-xs text-slate-400">Avg Memory</div>
+                                <div class="text-xl font-bold text-blue-400" x-text="(stats?.avg_mem_mb || 0) + ' MB'"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card border border-slate-700 rounded-xl p-4 flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-purple-900/50 flex items-center justify-center text-xl text-purple-400">&#9683;</div>
+                            <div>
+                                <div class="text-xs text-slate-400">Avg Disk Usage</div>
+                                <div class="text-xl font-bold text-purple-400" x-text="(stats?.avg_disk_pct || 0) + '%'"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Game Modes Donut -->
+                        <div class="bg-slate-800 border border-slate-700 rounded-xl p-5">
+                            <h3 class="text-sm font-semibold text-slate-300 mb-4">Game Mode Distribution</h3>
+                            <div class="h-64 flex items-center justify-center">
+                                <canvas id="chartGameModes"></canvas>
+                            </div>
+                        </div>
+                        <!-- Temperature Histogram -->
+                        <div class="bg-slate-800 border border-slate-700 rounded-xl p-5">
+                            <h3 class="text-sm font-semibold text-slate-300 mb-4">CPU Temperature Distribution</h3>
+                            <div class="h-64">
+                                <canvas id="chartTemps"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Map -->
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-4">Device Locations</h3>
+                        <div id="deviceMap" style="height: 400px;"></div>
+                    </div>
+
+                    <!-- Uptime Leaderboard -->
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-4">Top Uptime</h3>
+                        <div class="space-y-2">
+                            <template x-for="(d, i) in (stats?.uptime_top || [])" :key="d.serial">
+                                <div class="flex items-center gap-3 text-sm">
+                                    <span class="w-6 text-center font-bold" :class="i < 3 ? 'text-yellow-400' : 'text-slate-500'" x-text="i + 1"></span>
+                                    <div class="flex-1 bg-slate-700/50 rounded-full h-6 overflow-hidden relative">
+                                        <div class="absolute inset-y-0 left-0 rounded-full" :class="i === 0 ? 'bg-yellow-600/40' : i === 1 ? 'bg-slate-600/60' : i === 2 ? 'bg-orange-900/40' : 'bg-slate-700/60'"
+                                            :style="'width:' + Math.min(100, (d.uptime_s / ((stats?.uptime_top?.[0]?.uptime_s) || 1)) * 100) + '%'"></div>
+                                        <div class="absolute inset-0 flex items-center px-3 justify-between">
+                                            <span class="font-mono text-xs text-slate-200" x-text="d.hostname || d.serial.slice(-8)"></span>
+                                            <span class="text-xs text-slate-300" x-text="formatUptime(d.uptime_s)"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Activity Feed -->
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-semibold text-slate-300">Live Activity Feed</h3>
+                            <span class="text-xs text-slate-500" x-text="feed.length + ' events'"></span>
+                        </div>
+                        <div class="max-h-48 overflow-y-auto scrollbar-thin font-mono text-xs space-y-0.5">
+                            <template x-for="(item, i) in feed.slice(0, 50)" :key="i">
+                                <div class="py-0.5">
+                                    <span class="text-slate-500" x-text="item.ts"></span>
+                                    <span :class="feedColor(item.category)" x-text="item.msg"></span>
+                                </div>
+                            </template>
+                            <div x-show="feed.length === 0" class="text-slate-500 py-4 text-center">Waiting for events...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== DEVICES TAB ==================== -->
+                <div x-show="tab === 'devices'" style="display:none;" class="flex flex-col h-full">
+                    <!-- Devices toolbar -->
+                    <div class="bg-slate-800/50 border-b border-slate-700 px-6 py-3 flex items-center gap-4 flex-wrap shrink-0">
+                        <!-- Filters -->
+                        <div class="flex gap-1">
+                            <template x-for="[key, label, icon] in [['all','All',''],['online','Online','●'],['offline','Offline','○'],['errors','Errors','!'],['playing','Playing','▶']]">
+                                <button @click="filter = key" :class="filter === key ? 'bg-slate-600 text-white' : 'text-slate-300 hover:bg-slate-700'" class="px-3 py-1.5 rounded text-xs transition-colors">
+                                    <span x-text="icon" class="mr-0.5"></span><span x-text="label"></span>
+                                </button>
+                            </template>
+                        </div>
+                        <!-- Search -->
+                        <input x-model="search" type="text" placeholder="Search serial, hostname, IP..." class="bg-slate-700 border border-slate-600 rounded px-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 w-56">
+                        <!-- Sort -->
+                        <select x-model="sortBy" class="bg-slate-700 border border-slate-600 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                            <option value="status">Sort: Status</option>
+                            <option value="temp">Sort: Temperature</option>
+                            <option value="serial">Sort: Serial</option>
+                            <option value="game">Sort: Game Mode</option>
+                        </select>
+                        <span class="ml-auto text-xs text-slate-500" x-text="filteredDevices.length + ' devices'"></span>
+                    </div>
+
+                    <!-- Device Grid + Feed -->
+                    <div class="flex flex-col flex-1 min-h-0">
+                        <div class="flex-1 min-h-0 overflow-y-auto p-4 scrollbar-thin">
+                            <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+                                <template x-for="d in filteredDevices" :key="d.serial">
+                                    <div @click="selectDevice(d.serial)" class="bg-slate-800 border rounded-lg p-3 cursor-pointer card-hover transition-all duration-200" :class="cardBorder(d)">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="font-mono text-sm text-slate-200 truncate" x-text="d.hostname || d.serial.slice(-8)"></span>
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-lg" :class="statusDot(d.status)" x-text="d.status === 'online' ? '●' : '○'"></span>
+                                                <button @click.stop="removeDevice(d.serial)" class="text-slate-600 hover:text-red-400 text-sm transition-colors" title="Remove device">&times;</button>
+                                            </div>
+                                        </div>
+                                        <div class="text-xs text-slate-400 space-y-0.5">
+                                            <div class="flex justify-between" x-show="d.firmware_version">
+                                                <span>Version</span>
+                                                <span class="text-green-300" x-text="'v' + d.firmware_version"></span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span>Temp</span>
+                                                <span :class="tempColor(d.cpu_temp)" x-text="d.cpu_temp ? d.cpu_temp + '°C' : '—'"></span>
+                                            </div>
+                                            <div class="flex justify-between" x-show="d.fan_pwm >= 0">
+                                                <span>Fan</span>
+                                                <span :class="fanColor(d.fan_pwm)" x-text="fanLabel(d.fan_pwm)"></span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span>Game</span>
+                                                <span class="text-slate-200">
+                                                    <span x-text="gameModeIcon(d.game_mode)"></span>
+                                                    <span x-text="gameModeLabel(d.game_mode)"></span>
+                                                    <span x-show="d.player_count > 0" x-text="d.player_count + 'P'" class="text-blue-300 ml-1"></span>
+                                                </span>
+                                            </div>
+                                            <div class="flex justify-between" x-show="d.status === 'offline'">
+                                                <span>Last seen</span>
+                                                <span class="text-red-300" x-text="formatAge(d.last_seen)"></span>
+                                            </div>
+                                            <div x-show="d.error_count > 0" class="text-red-400 font-medium">
+                                                <span x-text="d.error_count + ' error' + (d.error_count > 1 ? 's' : '')"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div x-show="filteredDevices.length === 0" class="text-center text-slate-500 py-20">
+                                <p class="text-lg">No devices match your filter</p>
+                            </div>
+                        </div>
+
+                        <!-- Activity Feed -->
+                        <div class="border-t border-slate-700 bg-slate-800/50 overflow-hidden flex flex-col shrink-0" :style="'height:' + feedHeight + 'px'">
+                            <!-- Drag handle -->
+                            <div class="h-1.5 cursor-ns-resize flex items-center justify-center hover:bg-slate-600/50 transition-colors group"
+                                @mousedown.prevent="feedDragging = true; feedDragStartY = $event.clientY; feedDragStartH = feedHeight"
+                            >
+                                <div class="w-8 h-0.5 rounded bg-slate-600 group-hover:bg-slate-400 transition-colors"></div>
+                            </div>
+                            <div class="px-4 py-1.5 border-b border-slate-700 flex items-center justify-between">
+                                <h3 class="text-xs uppercase text-slate-400 font-semibold tracking-wider">Activity Feed</h3>
+                                <span class="text-xs text-slate-500" x-text="feed.length + ' events'"></span>
+                            </div>
+                            <div class="flex-1 overflow-y-auto px-4 py-1 scrollbar-thin font-mono text-xs">
+                                <template x-for="(item, i) in feed.slice(0, 100)" :key="i">
+                                    <div class="py-0.5">
+                                        <span class="text-slate-500" x-text="item.ts"></span>
+                                        <span :class="feedColor(item.category)" x-text="item.msg"></span>
+                                    </div>
+                                </template>
+                                <div x-show="feed.length === 0" class="text-slate-500 py-4 text-center">Waiting for events...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== SETTINGS TAB ==================== -->
+                <div x-show="tab === 'settings'" style="display:none;" class="p-6 space-y-6 max-w-3xl" x-data="{ showSensitive: false }">
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-white">Dashboard Info</h3>
+                            <!-- Toggle -->
+                            <label class="flex items-center gap-3 cursor-pointer select-none">
+                                <span class="text-xs text-slate-400" x-text="showSensitive ? 'Visible' : 'Hidden'"></span>
+                                <div class="relative" @click="showSensitive = !showSensitive">
+                                    <div class="w-10 h-5 rounded-full transition-colors" :class="showSensitive ? 'bg-green-600' : 'bg-slate-600'"></div>
+                                    <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" :class="showSensitive ? 'translate-x-5' : ''"></div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="space-y-4 text-sm">
+                            <div class="flex justify-between py-2 border-b border-slate-700">
+                                <span class="text-slate-400">Version</span>
+                                <span class="text-white font-mono">1.0.0</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-700">
+                                <span class="text-slate-400">Backend</span>
+                                <span class="text-white" x-text="showSensitive ? 'FastAPI + Uvicorn' : '********'"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-700" x-show="showSensitive" x-transition>
+                                <span class="text-slate-400">Message Broker</span>
+                                <span class="text-white">Mosquitto (MQTT)</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-700">
+                                <span class="text-slate-400">Database</span>
+                                <span class="text-white" x-text="showSensitive ? 'SQLite' : '********'"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-700">
+                                <span class="text-slate-400">Event Retention</span>
+                                <span class="text-white" x-text="showSensitive ? '7 days' : '********'"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold text-white mb-4">Connection</h3>
+                        <div class="space-y-4 text-sm">
+                            <div class="flex justify-between py-2 border-b border-slate-700">
+                                <span class="text-slate-400">WebSocket</span>
+                                <span class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full" :class="wsConnected ? 'bg-green-400' : 'bg-red-400'"></span>
+                                    <span :class="wsConnected ? 'text-green-400' : 'text-red-400'" x-text="wsConnected ? 'Connected' : 'Disconnected'"></span>
+                                </span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-700">
+                                <span class="text-slate-400">Connected Devices</span>
+                                <span class="text-white" x-text="devices.length"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-700">
+                                <span class="text-slate-400">Active Alerts</span>
+                                <span :class="alertCount > 0 ? 'text-red-400' : 'text-green-400'" x-text="alertCount"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold text-white mb-4">Alert Thresholds</h3>
+                        <div class="space-y-4 text-sm">
+                            <div class="flex justify-between py-2 border-b border-slate-700">
+                                <span class="text-slate-400">Offline Timeout</span>
+                                <span class="text-white">5 minutes</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-700">
+                                <span class="text-slate-400">CPU Temp Warning</span>
+                                <span class="text-white">&gt; 80°C</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-700">
+                                <span class="text-slate-400">Disk Usage Warning</span>
+                                <span class="text-white">&gt; 90%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6" x-show="showSensitive" x-transition>
+                        <h3 class="text-lg font-semibold text-white mb-4">Broker Users</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center justify-between py-2 border-b border-slate-700">
+                                <div>
+                                    <span class="text-white font-mono">backend</span>
+                                    <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-900/50 text-blue-300">admin</span>
+                                </div>
+                                <span class="text-slate-400">Full read/write access</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-b border-slate-700">
+                                <div>
+                                    <span class="text-white font-mono">goball</span>
+                                    <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-green-900/50 text-green-300">device</span>
+                                </div>
+                                <span class="text-slate-400">Publish to goball/#</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== SLIDE-OUT PANELS ==================== -->
+
+            <!-- Alerts Panel -->
+            <aside x-show="panel === 'alerts'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
+                class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col shrink-0 overflow-hidden" style="display:none;">
+                <div class="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-white">Active Alerts</h3>
+                    <div class="flex items-center gap-2">
+                        <a href="/fleet/alerts" class="text-xs text-blue-400 hover:text-blue-300 hover:underline">See more &rarr;</a>
+                        <button @click="panel = null" class="text-slate-400 hover:text-white text-lg">&times;</button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
+                    <template x-for="alert in alerts.slice(0, 50)" :key="alert.serial + alert.alert_type + alert.ts">
+                        <div class="bg-slate-700/50 border rounded-lg p-3 text-sm" :class="{'border-red-800/50': alert.alert_type==='offline'||alert.alert_type==='error', 'border-orange-800/50': alert.alert_type==='high_temp', 'border-yellow-800/50': alert.alert_type==='disk_full', 'border-purple-800/50': alert.alert_type==='app_down'}">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-mono text-xs text-blue-400" x-text="'...' + alert.serial.slice(-8)"></span>
+                                <span class="text-xs px-2 py-0.5 rounded-full" :class="{'bg-red-900/50 text-red-300': alert.alert_type==='offline'||alert.alert_type==='error', 'bg-orange-900/50 text-orange-300': alert.alert_type==='high_temp', 'bg-yellow-900/50 text-yellow-300': alert.alert_type==='disk_full', 'bg-purple-900/50 text-purple-300': alert.alert_type==='app_down'}" x-text="({offline:'Offline',high_temp:'High Temp',disk_full:'Disk Full',app_down:'App Down',error:'Error'})[alert.alert_type]||alert.alert_type"></span>
+                            </div>
+                            <div class="text-slate-200 text-xs" x-text="alert.message"></div>
+                            <div class="text-slate-500 text-xs mt-1" x-text="formatAge(alert.ts)"></div>
+                        </div>
+                    </template>
+                    <div x-show="alerts.length === 0" class="text-center text-slate-500 py-10">
+                        <p class="text-2xl mb-2">&#10003;</p><p>No active alerts</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Logs Panel -->
+            <aside x-show="panel === 'logs'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
+                class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col shrink-0 overflow-hidden" style="display:none;">
+                <div class="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-white">Error Logs</h3>
+                    <div class="flex items-center gap-2">
+                        <a href="/fleet/logs" class="text-xs text-blue-400 hover:text-blue-300 hover:underline">See more &rarr;</a>
+                        <button @click="panel = null" class="text-slate-400 hover:text-white text-lg">&times;</button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
+                    <template x-for="(entry, i) in errorLogs.slice(0, 100)" :key="i">
+                        <div class="bg-red-900/10 border border-red-900/30 rounded px-3 py-2 text-xs">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-mono text-blue-400" x-text="'...' + entry.serial.slice(-8)"></span>
+                                <span class="text-slate-500" x-text="formatAge(entry.ts)"></span>
+                            </div>
+                            <div class="text-red-300" x-text="entry.message"></div>
+                        </div>
+                    </template>
+                    <div x-show="errorLogs.length === 0" class="text-center text-slate-500 py-10">
+                        <p class="text-2xl mb-2">&#10003;</p><p>No errors logged</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Terminal Modal -->
+    <div x-show="terminalOpen" x-transition.opacity @click.self="closeTerminal()" class="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4" style="display:none;">
+        <div class="bg-slate-900 border border-slate-600 rounded-xl w-full max-w-4xl h-[70vh] flex flex-col" @click.stop>
+            <div class="px-4 py-2 border-b border-slate-700 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-green-400 text-sm">&#9654;</span>
+                    <span class="text-sm font-semibold text-white">Terminal</span>
+                    <span class="text-xs text-slate-400 font-mono" x-text="terminalSerial"></span>
+                </div>
+                <button @click="closeTerminal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <div id="terminal-container" class="flex-1 p-1"></div>
+        </div>
+    </div>
+
+    <!-- Firmware Update Modal -->
+    <div x-show="fwOpen" x-transition.opacity @click.self="fwOpen = false" class="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4" style="display:none;">
+        <div class="bg-slate-800 border border-slate-600 rounded-xl w-full max-w-md" @click.stop>
+            <div class="px-5 py-3 border-b border-slate-700 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-white">Firmware Update</h3>
+                <button @click="fwOpen = false" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <div class="p-5 space-y-4">
+
+                <!-- Checking spinner -->
+                <div x-show="fwChecking" class="text-center py-6">
+                    <div class="inline-block w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <p class="text-sm text-slate-400">Checking for updates...</p>
+                </div>
+
+                <!-- Up to date -->
+                <div x-show="!fwChecking && fwCheckResult && !fwCheckResult.update_available && !fwCheckResult.error" class="text-center py-6">
+                    <p class="text-3xl mb-2">&#10003;</p>
+                    <p class="text-green-400 font-semibold">Firmware is up to date</p>
+                    <p class="text-sm text-slate-400 mt-2">Current version: <span class="text-white font-mono" x-text="'v' + (fwCheckResult?.current_version || '')"></span></p>
+                </div>
+
+                <!-- Update available -->
+                <div x-show="!fwChecking && fwCheckResult?.update_available && !fwDeploying && !fwResult">
+                    <div class="bg-purple-900/20 border border-purple-700/50 rounded-lg p-4 mb-4">
+                        <p class="text-purple-300 font-semibold text-sm mb-3">Update Available</p>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <span class="text-slate-400 block text-xs">Current</span>
+                                <span class="text-white font-mono" x-text="'v' + (fwCheckResult?.current_version || '')"></span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-xs">Latest</span>
+                                <span class="text-green-400 font-mono font-semibold" x-text="'v' + (fwCheckResult?.latest_version || '')"></span>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-2" x-text="((fwCheckResult?.size || 0) / 1024 / 1024).toFixed(1) + ' MB'"></div>
+                    </div>
+                    <div x-show="fwCheckResult?.changelog" class="mb-4">
+                        <p class="text-xs text-slate-400 font-semibold mb-1">What's new:</p>
+                        <div class="text-xs text-slate-300 bg-slate-900/50 rounded p-3 whitespace-pre-line" x-text="fwCheckResult?.changelog"></div>
+                    </div>
+                </div>
+
+                <!-- Deploy progress -->
+                <div x-show="fwDeploying" class="space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-400" x-text="fwStage"></span>
+                        <span class="text-purple-300" x-text="fwProgress + '%'"></span>
+                    </div>
+                    <div class="w-full bg-slate-700 rounded-full h-2">
+                        <div class="bg-purple-500 h-2 rounded-full transition-all duration-300" :style="'width:' + fwProgress + '%'"></div>
+                    </div>
+                </div>
+
+                <!-- Result -->
+                <div x-show="fwResult" x-transition class="text-xs p-3 rounded"
+                    :class="fwResult?.status === 'ok' ? 'bg-green-900/30 text-green-300 border border-green-800/50' : 'bg-red-900/30 text-red-300 border border-red-800/50'">
+                    <span x-text="fwResult?.message"></span>
+                </div>
+
+                <!-- Error -->
+                <div x-show="!fwChecking && fwCheckResult?.error" class="text-xs p-3 rounded bg-red-900/30 text-red-300 border border-red-800/50">
+                    <span x-text="fwCheckResult?.error"></span>
+                </div>
+
+                <!-- Deploy button -->
+                <button x-show="fwCheckResult?.update_available && !fwResult"
+                    @click="deployServerFirmware()"
+                    :disabled="fwDeploying"
+                    class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors">
+                    <span x-show="!fwDeploying" x-text="'Deploy v' + (fwCheckResult?.latest_version || '')"></span>
+                    <span x-show="fwDeploying">Deploying...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Copyright -->
+    <div class="fixed bottom-2 right-3 text-xs text-slate-600 z-30">@gosportsgolfproductsllc 2026</div>
+
+    <!-- Device Detail Modal -->
+    <div x-show="selectedDevice" x-transition.opacity @click.self="closeDetail()" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display:none;">
+        <div class="bg-slate-800 border border-slate-600 rounded-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-thin" @click.stop>
+            <template x-if="selectedDetail">
+                <div>
+                    <div class="p-6 border-b border-slate-700 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold text-white" x-text="selectedDetail.system?.hostname || selectedDetail.serial"></h2>
+                            <p class="text-sm text-slate-400 font-mono" x-text="selectedDetail.serial"></p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="px-3 py-1 rounded-full text-sm" :class="selectedDetail.status==='online' ? 'bg-green-900/50 text-green-300' : 'bg-red-900/50 text-red-300'" x-text="selectedDetail.status"></span>
+                            <button @click="closeDetail()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+                        </div>
+                    </div>
+                    <div class="p-6 border-b border-slate-700" x-show="selectedDetail.system">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3">System</h3>
+                        <div class="grid grid-cols-3 gap-4 text-sm">
+                            <div><span class="text-slate-400 block">CPU Temp</span><span :class="tempColor(selectedDetail.system?.cpu_temp||0)" class="text-lg font-semibold" x-text="(selectedDetail.system?.cpu_temp||0)+'°C'"></span></div>
+                            <div><span class="text-slate-400 block">Memory</span><span class="text-white" x-text="(selectedDetail.system?.mem_used_mb||0)+' / '+(selectedDetail.system?.mem_total_mb||0)+' MB'"></span></div>
+                            <div><span class="text-slate-400 block">Disk</span><span class="text-white" x-text="(selectedDetail.system?.disk_used_pct||0)+'%'"></span></div>
+                            <div><span class="text-slate-400 block">IP</span><span class="text-white font-mono" x-text="selectedDetail.system?.ip||'—'"></span></div>
+                            <div><span class="text-slate-400 block">WiFi</span><span class="text-white" x-text="(selectedDetail.system?.wifi_ssid||'—')+' ('+(selectedDetail.system?.wifi_signal_dbm||0)+' dBm)'"></span></div>
+                            <div><span class="text-slate-400 block">Uptime</span><span class="text-white" x-text="formatUptime(selectedDetail.system?.uptime_s||0)"></span></div>
+                            <div><span class="text-slate-400 block">App</span><span :class="selectedDetail.system?.app_running?'text-green-400':'text-red-400'" x-text="selectedDetail.system?.app_running?'Running (PID '+selectedDetail.system?.app_pid+')':'Not Running'"></span></div>
+                            <div x-show="selectedDetail.system?.firmware_version"><span class="text-slate-400 block">Firmware</span><span class="text-green-400 text-lg font-semibold" x-text="'v' + (selectedDetail.system?.firmware_version||'')"></span></div>
+                            <div><span class="text-slate-400 block">Fan</span>
+                                <template x-if="(selectedDetail.system?.fan_pwm ?? -1) >= 0">
+                                    <span>
+                                        <span :class="fanColor(selectedDetail.system?.fan_pwm)" class="text-lg font-semibold" x-text="fanLabel(selectedDetail.system?.fan_pwm)"></span>
+                                        <span class="text-slate-400 text-xs ml-1" x-text="(selectedDetail.system?.fan_rpm ?? -1) >= 0 ? (selectedDetail.system?.fan_rpm + ' RPM') : ''"></span>
+                                    </span>
+                                </template>
+                                <template x-if="(selectedDetail.system?.fan_pwm ?? -1) < 0">
+                                    <span class="text-gray-500">No fan</span>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6 border-b border-slate-700" x-show="selectedDetail.game">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3">Game</h3>
+                        <div class="grid grid-cols-3 gap-4 text-sm">
+                            <div><span class="text-slate-400 block">Mode</span><span class="text-white" x-text="gameModeIcon(selectedDetail.game?.mode)+' '+gameModeLabel(selectedDetail.game?.mode||'idle')"></span></div>
+                            <div><span class="text-slate-400 block">Players</span><span class="text-white" x-text="selectedDetail.game?.player_count||0"></span></div>
+                            <div><span class="text-slate-400 block">Hole</span><span class="text-white" x-text="selectedDetail.game?.hole||'—'"></span></div>
+                        </div>
+                        <div x-show="selectedDetail.game?.scores?.length > 0" class="mt-2">
+                            <span class="text-slate-400 text-sm">Scores: </span>
+                            <template x-for="(s,i) in selectedDetail.game?.scores||[]" :key="i">
+                                <span class="inline-block bg-blue-900/50 text-blue-200 rounded px-2 py-0.5 text-sm mr-1" x-text="'P'+(i+1)+': '+s"></span>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="p-6 border-b border-slate-700" x-show="selectedDetail.errors?.length > 0">
+                        <h3 class="text-sm font-semibold text-red-400 mb-3">Errors (<span x-text="selectedDetail.errors?.length||0"></span>)</h3>
+                        <div class="space-y-1 max-h-32 overflow-y-auto scrollbar-thin">
+                            <template x-for="(err,i) in (selectedDetail.errors||[]).slice(-10)" :key="i">
+                                <div class="text-xs bg-red-900/20 border border-red-800/30 rounded px-2 py-1 text-red-300 font-mono" x-text="err"></div>
+                            </template>
+                        </div>
+                    </div>
+                    <!-- Quick Actions -->
+                    <div class="p-6 border-b border-slate-700">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3">Quick Actions</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <button @click="sendCommand(selectedDetail.serial, 'restart_app')"
+                                :disabled="cmdLoading"
+                                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
+                                Restart App
+                            </button>
+                            <button @click="sendCommand(selectedDetail.serial, 'restart_agent')"
+                                :disabled="cmdLoading"
+                                class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
+                                Restart Agent
+                            </button>
+                            <button @click="if(confirm('Reboot this device?')) sendCommand(selectedDetail.serial, 'reboot')"
+                                :disabled="cmdLoading"
+                                class="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
+                                Reboot
+                            </button>
+                            <button @click="openTerminal(selectedDetail.serial)"
+                                class="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white text-xs rounded-lg transition-colors">
+                                Terminal
+                            </button>
+                            <button @click="checkFirmwareUpdate()"
+                                :disabled="selectedDetail.status !== 'online'"
+                                class="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
+                                Update Firmware
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <button @click="clearErrors(selectedDetail.serial)"
+                                class="px-3 py-1.5 bg-slate-700 hover:bg-red-700 text-slate-300 hover:text-white text-xs rounded-lg transition-colors border border-slate-600">
+                                Clear Errors
+                            </button>
+                            <button @click="clearAlerts(selectedDetail.serial)"
+                                class="px-3 py-1.5 bg-slate-700 hover:bg-orange-700 text-slate-300 hover:text-white text-xs rounded-lg transition-colors border border-slate-600">
+                                Clear Alerts
+                            </button>
+                            <button @click="clearLogs(selectedDetail.serial)"
+                                class="px-3 py-1.5 bg-slate-700 hover:bg-red-800 text-slate-300 hover:text-white text-xs rounded-lg transition-colors border border-slate-600">
+                                Clear Logs
+                            </button>
+                        </div>
+                        <div x-show="cmdResult" x-transition class="mt-3 text-xs p-2 rounded"
+                            :class="cmdResult?.status === 'ok' ? 'bg-green-900/30 text-green-300 border border-green-800/50' : 'bg-red-900/30 text-red-300 border border-red-800/50'">
+                            <span x-text="cmdResult?.message"></span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-sm font-semibold text-slate-300 mb-3">Event History</h3>
+                        <div class="space-y-1 max-h-48 overflow-y-auto scrollbar-thin">
+                            <template x-for="(ev,i) in selectedEvents" :key="i">
+                                <div class="text-xs font-mono flex gap-2 py-0.5">
+                                    <span class="text-slate-500 shrink-0" x-text="new Date(ev.ts*1000).toLocaleString()"></span>
+                                    <span class="text-slate-400" x-text="ev.event_type"></span>
+                                    <span class="text-slate-300 truncate" x-text="JSON.stringify(ev.payload)"></span>
+                                </div>
+                            </template>
+                            <div x-show="selectedEvents.length === 0" class="text-slate-500 text-sm">No events recorded</div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+for ms20.zip it has the following
+Has a working game sounds 
+has a working UI for 1 player , 9 Holes, 18 Holes
+has a working LOGIC for all the players
+has a working sounds for all players (Nick)
+has a working LED trains, - it stutters when audio is running it justs slows a bit -
+has a working UI/LOGIC for 2 player, 9 Holes, 18 holes
+has a working reset scores for 1 and two players, 9 and 18 holes mode 
+Fixed issue where the 18 holes, 2 players, not scoring the final score in Score Card menu
+has a working UI/LOGIC for 3,4 players, 9 holes, 18 holes Stroke play
+has a working reset scores for 3, 4 players for 9 and 18 stroke play game modes 
+(Nick) Integrated the sounds of 0, 3, 4 and five points to the game 
+has a working Highlighting feature with 1 to 4 players, stroke play, 9 holes 
+has a working Highlighting feature with 1 to 4 players, stroke play, 18 holes 
+(Fix) now the player turn voice is non blocking using a play_sound for 2 players, 9  holes, stroke game
+(Fix) Instead of calling player turn each turn, now it's after the player finishes his balls
+(Fix) Issue was it keeps calling player turns as  well as their scores calculating happening in the main menu, now it doesn't happen anymore with the sensors_enabled flag
+has a working toggle the led to green in case of scoring a point 
+(Fix) replaced the toggle the led to green only, now it provides multiple color green/blue/red and white, 
+(Undergoing) integration between the ms19 nd the new screens that contains, match play and coming soon note
+10/14/2025 Adding/integrating Quota, Vegas quota points and Match Play
+10/20/2025 Had a successful abstraction by taking the stroke play mode, alon with the rest of the modes to game_modes directory 
+11/4/2025 had a successful implementation of working Match Play 1v1, 9 Holes, updating the corresponding UI as well
+11/5/2025 had a successful implementation of working Match Play 1v1, 9holes, corner case were player can make a come back calculated sucessfully
+11/5/2025 trying to fix the issue were the sounds still being played even after the players finish the game 
+11/5/2025 Added proper debugging comments that can be activated and deactivated easily
+1/11/2026 Fixed issue with docker for release/debug builds. Now both works fine
+1/12/2026 Now Scorecard for matchplay is working, still want to reset it 
+02/02/2026 Now Scorecard for matchplay is working, balls, holes can be reset 
+02/02/2026 1v1, 18 holes now implemented, and resetting good 
+02/02/2026 [FIX] 1v1, 18hole and 9 hole,  to say the player name outloud at each turn
+02/02/2026 2v2,  9 hole functionality implemented and working sucessfully 
+02/02/2026 2v2,  18 hole functionality implemented and working sucessfully 
+02/02/2026 1v1, 9 holes crown was added, [Fix] it stops saying points after player has crown, yet, it says the turn for which player play_sound_once
+02/02/2026 1v1,  18 holes crown was added, [Fix] it stops saying points after player has crown, yet, it says the turn for which player play_sound_once
+02/02/2026 2v2,  9 holes crown was added, [Fix] it stops saying points after player has crown, yet, it says the turn for which player play_sound_once
+02/02/2026 2v2,  18 holes crown was added, [Fix] it stops saying points after player has crown, yet, it says the turn for which player play_sound_once
+02/03/2026 – Match Play (1v1 & 2v2, 9/18 holes) now automatically moves to the scorecard screen when the game ends.
+02/03/2026 – Match Play (1v1 & 2v2, 9/18 holes) now announces the winner (Player 1 or Player 2) from a pool of 5 random voice lines with a 1-second delay.
+02/03/2026 – Stroke Play (1 player, 9 or 18 holes) now automatically moves to the scorecard screen when the game finishes.
+02/03/2026 – Stroke Play (2 players, 9 or 18 holes) now automatically moves to the scorecard screen when the game finishes. and announces winning player
+02/03/2026 – Stroke Play (3 players, 9 or 18 holes) now automatically moves to the scorecard screen when the game finishes. and announces winning player
+02/03/2026 – Stroke Play (4 players, 9 or 18 holes) now automatically moves to the scorecard screen when the game finishes. and announces winning player
+02/03/2026 – Fix: End of Match Play no longer says a hardcoded “Player 1 Turn”
+02/03/2026 – Fix: Changed the debounce, instead of time, to interrupt based using signal and POSIX, changed debounce instead of 5s to 500ms as well, now the release working good, and debugging session more responsive
+02/03/2026 – Modification: changed all time delay to macros so it can all be changed from one place
+02/03/2026 – Addition: added testing simulator using the pi itself instead of going with IR sensors
+02/25/2026 – Addition: Vegas dead-category rule implemented in quotaplay.c for multiplayer scoring
+02/25/2026 – Fix: Main Menu button sounds changed from PLAY_BACKBTN_SOUND to PLAY_MAINMENU_SOUND for Quota/Vegas modes
+02/25/2026 – Fix: Toolchain sysroot path corrected in toolchain-aarch64.cmake
+02/25/2026 – Addition: PIO/LED graceful degradation - LEDs disabled gracefully when PIO hardware unavailable
+02/25/2026 – Addition: LED output re-enabled (controller.enabled = true) for production RPi5 deployment
+02/28/2026 – Addition: Integrated new SquareLine Studio UI export with 6 new screens (Tips, Visualize, High Shot, Basic, Low Shot, Update/Firmware)
+02/28/2026 – Addition: Home screen now has "TIPS" and "Update" buttons for Tips menu and firmware info
+02/28/2026 – Addition: Update/Firmware screen shows firmware version (30.5), company contact info
+02/28/2026 – Fix: Merged custom event handlers (sounds, game mode setting, score resets) back into regenerated ui.c
+02/28/2026 – Fix: Added missing #include for sound_logic_event.h in gpio_event.c, strokeplay.h, quotaplay.h
+02/28/2026 – Fix: Corrected updateflag -> update_flag naming mismatch in gpio_event.h
+03/01/2026 – Fix: Video path changed from hardcoded /home/q/... to relative modules/game_videos/
+03/01/2026 – Fix: Stroke Play 1P highlight added case 1: for single-player 9H and 18H
+03/01/2026 – Fix: Player name 1P scorecard registered missing ui_SP19HPScPText label
+03/01/2026 – Addition: Video debug logging with MODULE_VIDEO, file existence/permission checks, ffprobe/ffplay error reporting
+03/01/2026 – Addition: Audio debug logging — format info on init, file access checks, channel assignment logging
+03/01/2026 – Addition: Yocto video path — #ifdef YOCTO_BUILD conditional uses /opt/goball/videos/ on Yocto, relative path on desktop
+03/01/2026 – Addition: YOCTO_BUILD compile definition added to CMakeLists.txt via add_compile_definitions()
+03/01/2026 – Addition: Yocto rpidistro-ffmpeg dependency with SDL2 PACKAGECONFIG (bbappend) for ffplay on RPi5
+03/01/2026 – Addition: Yocto recipe installs .mp4 video files to /opt/goball/videos/
+03/01/2026 – Modification: Yocto goball recipe switched from master to ui-redesign branch
+03/01/2026 – Modification: Replaced Weston with labwc compositor (wlroots-based, matching Raspi OS) for proper ffplay window positioning
+03/01/2026 – Addition: Created wlroots 0.17.4 and labwc 0.7.4 Yocto recipes from scratch in meta-goball
+03/01/2026 – Addition: labwc-init recipe with rc.xml window rules, environment, and systemd service
+03/01/2026 – Addition: Custom psplash loading bar positioned over green rectangle in splash image (x+564, y=344) with green theme (#00F46A)
+03/01/2026 – Addition: Runtime video positioning using lv_obj_get_coords() instead of hardcoded panel values
+03/01/2026 – Fix: LVGL 9.x API — replaced non-existent lv_area_get_x1/y1 with direct struct field access (.x1, .y1)
+03/01/2026 – Addition: Video debug enhancements — ffplay command logging, SDL window position, LVGL panel coords, early-death detection
+
+
+#what to fix
+02/02/2026 1v1, 18hole and 9 hole, need to say the player name outloud at each turn
+

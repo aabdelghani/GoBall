@@ -9,7 +9,17 @@ endif()
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 
-project(SquareLine_Project C)
+project(goball C)
+
+# Version — single source of truth from VERSION file
+file(STRINGS "${PROJECT_SOURCE_DIR}/VERSION" GOBALL_VERSION_RAW)
+string(STRIP "${GOBALL_VERSION_RAW}" GOBALL_VERSION)
+add_compile_definitions(GOBALL_VERSION="${GOBALL_VERSION}")
+message(STATUS "GoBall version: ${GOBALL_VERSION}")
+
+if(YOCTO_BUILD)
+    add_compile_definitions(YOCTO_BUILD=1)
+endif()
 
 # Debug configuration options
 option(ENABLE_DEBUG "Enable debug system" ON)
@@ -75,6 +85,8 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/modules/led_logic
     ${PROJECT_SOURCE_DIR}/utils/piolib/include
     ${PROJECT_SOURCE_DIR}/modules/debug  # Add debug include path
+    ${PROJECT_SOURCE_DIR}/modules/ota_update
+    ${PROJECT_SOURCE_DIR}/modules/radio
     ${LIBGPIOD_INCLUDE_DIRS}
 )
 if(NOT YOCTO_BUILD)
@@ -93,6 +105,11 @@ FILE(GLOB_RECURSE SOUND_LOGIC_Sources CONFIGURE_DEPENDS modules/sound_logic/*.c)
 FILE(GLOB_RECURSE LED_LOGIC_Sources CONFIGURE_DEPENDS modules/led_logic/*.c)
 FILE(GLOB_RECURSE GAME_MODE_Sources CONFIGURE_DEPENDS modules/game_modes/*.c)
 FILE(GLOB_RECURSE DEBUG_Sources CONFIGURE_DEPENDS modules/debug/*.c)  # Add debug sources
+FILE(GLOB_RECURSE GAME_VIDEOS_Sources CONFIGURE_DEPENDS modules/game_videos/*.c)
+FILE(GLOB_RECURSE PLAYER_NAME_Sources CONFIGURE_DEPENDS modules/player_name/*.c)
+FILE(GLOB_RECURSE WIFI_MANAGER_Sources CONFIGURE_DEPENDS modules/wifi_manager/*.c)
+FILE(GLOB_RECURSE OTA_UPDATE_Sources CONFIGURE_DEPENDS modules/ota_update/*.c)
+FILE(GLOB_RECURSE RADIO_Sources CONFIGURE_DEPENDS modules/radio/*.c)
 
 # Sound directory path (configurable for Yocto vs development)
 if(SOUND_DIR_PATH)
@@ -110,6 +127,11 @@ add_executable(${PROJECT_NAME}
     ${LED_LOGIC_Sources}
     ${GAME_MODE_Sources}
     ${DEBUG_Sources}  # Include debug sources
+    ${GAME_VIDEOS_Sources}
+    ${PLAYER_NAME_Sources}
+    ${WIFI_MANAGER_Sources}
+    ${OTA_UPDATE_Sources}
+    ${RADIO_Sources}
 )
 
 # Link directories and libraries
@@ -120,11 +142,12 @@ if(NOT YOCTO_BUILD)
     )
 endif()
 
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME}
     SDL2
     SDL2_mixer
     pio
     ${LIBGPIOD_LIBRARIES}
+    pthread
     m  # Add math library for debug timestamps if needed
 )
 
